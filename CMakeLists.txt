@@ -25,6 +25,13 @@ add_executable(Engine
         src/engine/utils.hpp
         src/engine/Engine.hpp
         src/engine/window.hpp
+        src/engine/ecs/registry.hpp
+        src/engine/ecs/entity.hpp
+        src/engine/ecs/component_storage.hpp
+        src/engine/ecs/component/mesh_component.hpp
+        src/engine/ecs/component/transform_component.hpp
+        src/engine/ecs/component/LightComponent.hpp
+        src/engine/ecs/component/CameraComponent.hpp
 )
 
 # Lier GLFW et OpenGL
