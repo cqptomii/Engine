@@ -23,6 +23,8 @@ add_executable(Engine
         src/main.cpp
         src/glad.c
         src/engine/utils.hpp
+        src/engine/Engine.hpp
+        src/engine/window.hpp
 )
 
 # Lier GLFW et OpenGL
