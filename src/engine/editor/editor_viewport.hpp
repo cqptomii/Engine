@@ -9,6 +9,7 @@
 #include <memory>
 #include <GLFW/glfw3.h>
 #include "editor_camera.hpp"
+#include "../core/input/context/editor_mapping_context.hpp"
 #include "../core/window.hpp"
 
 
@@ -75,6 +76,10 @@ public:
 
         this->mouse_last_x = x_pos;
         this->mouse_last_y = y_pos;
+
+
+        // Translate the camera
+
 
         // Update the camera rotation
         this->editor_camera.process_cam_rotation(
