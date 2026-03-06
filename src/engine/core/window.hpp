@@ -10,21 +10,13 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-enum class WindowType
-{
-    EDITOR,
-    RUN
-};
-
 class Window
 {
-private:
     GLFWwindow* window_ptr = nullptr;
     int width, height;
     double cursor_x, cursor_y;
 
     std::string window_title;
-    WindowType window_type;
 
     void init()
     {
@@ -48,8 +40,6 @@ private:
 
         // Set Callback functions
         glfwSetWindowSizeCallback(this->window_ptr, window_size_callback);
-        glfwSetCursorPosCallback(this->window_ptr, mouse_pos_callback);
-        glfwSetScrollCallback(this->window_ptr, scroll_callback);
 
         std::cout << "Window created" << std::endl;
         std::cout << "Window size: " << this->width << "x" << this->height << std::endl;
@@ -59,11 +49,11 @@ private:
     }
 
 public:
-    Window() : width(800), height(600), cursor_x(0), cursor_y(0), window_title("Untitled"), window_type(WindowType::EDITOR)
+    Window() : width(800), height(600), cursor_x(0), cursor_y(0), window_title("Untitled")
     {
         this->init();
     }
-    explicit Window(const int width = 800, const int height = 600, std::string title = "Untitled", const WindowType type) : width(width), height(height), window_title(std::move(title)), window_type(type), cursor_x(0), cursor_y(0)
+    explicit Window(const int width = 800, const int height = 600, std::string title = "Untitled") : width(width), height(height), window_title(std::move(title)), cursor_x(0), cursor_y(0)
     {
         this->init();
     }
@@ -104,6 +94,11 @@ public:
         return glfwGetMouseButton(this->window_ptr, button) == GLFW_PRESS;
     }
 
+
+    GLFWwindow* get_window_ptr() const noexcept
+    {
+        return this->window_ptr;
+    }
     //
     // Callback functions
     //
