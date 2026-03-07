@@ -9,14 +9,15 @@
 #include <utility>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include "input/input_manager.hpp"
 
 class Window
 {
     GLFWwindow* window_ptr = nullptr;
-    int width, height;
     double cursor_x, cursor_y;
 
     std::string window_title;
+    InputManager input_manager;
 
     void init()
     {
@@ -41,6 +42,12 @@ class Window
         // Set Callback functions
         glfwSetWindowSizeCallback(this->window_ptr, window_size_callback);
 
+        glfwSetCursorPosCallback(this->window_ptr, mouse_pos_callback);
+        glfwSetScrollCallback(this->window_ptr, scroll_callback);
+        glfwSetMouseButtonCallback(this->window_ptr, mouse_button_callback);
+        glfwSetKeyCallback(this->window_ptr, key_callback);
+
+
         std::cout << "Window created" << std::endl;
         std::cout << "Window size: " << this->width << "x" << this->height << std::endl;
 
@@ -49,6 +56,9 @@ class Window
     }
 
 public:
+    int width, height;
+
+
     Window() : width(800), height(600), cursor_x(0), cursor_y(0), window_title("Untitled")
     {
         this->init();
@@ -102,6 +112,10 @@ public:
     //
     // Callback functions
     //
+    void setUserPointer(void* user_ptr) const
+    {
+        glfwSetWindowUserPointer(this->window_ptr, user_ptr);
+    }
 
     static void window_size_callback(GLFWwindow* window, int width, int height)
     {
@@ -109,11 +123,23 @@ public:
     }
     static void mouse_pos_callback(GLFWwindow* window, double xpos, double ypos)
     {
-
+        auto* input_manager = static_cast<InputManager*>(glfwGetWindowUserPointer(window));
+        input_manager->on_mouse_move(xpos, ypos);
+    }
+    static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+    {
+        auto* input_manager = static_cast<InputManager*>(glfwGetWindowUserPointer(window));
+        input_manager->on_mouse_button_event(button, action, mods);
     }
     static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
     {
-
+        auto* input_manager = static_cast<InputManager*>(glfwGetWindowUserPointer(window));
+        input_manager->on_mouse_scroll(xoffset, yoffset);
+    }
+    static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+    {
+        auto* input_manager = static_cast<InputManager*>(glfwGetWindowUserPointer(window));
+        input_manager->on_key_event(key, scancode, action, mods);
     }
 
     // Function to update the window buffers and poll events
