@@ -8,12 +8,10 @@
 #include "../input_mapping_context.hpp"
 #include <GLFW/glfw3.h>
 
-class EditorMappingContext : public InputMappingContext
+class RuntimeMappingContext : public InputMappingContext
 {
-    EditorMappingContext()
-    {
-
-    }
+public:
+    RuntimeMappingContext() {}
 };
 
 #endif //ENGINE_RUNTIME_MAPPING_CONTEXT_HPP

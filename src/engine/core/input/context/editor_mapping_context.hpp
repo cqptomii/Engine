@@ -10,12 +10,12 @@
 
 class EditorMappingContext : public InputMappingContext
 {
+public:
     EditorMappingContext()
     {
         // Camera movement
-        this->register_input_mapping("CameraTranslate", {Input(GLFW_KEY_LEFT_SHIFT, KEYBOARD)});
-        this->register_input_mapping("CameraRotate", {Input(GLFW_MOUSE_BUTTON_MIDDLE, MOUSE)});
-
+        this->register_input_mapping("move_camera", {Input(GLFW_KEY_LEFT_SHIFT, KEYBOARD)});
+        this->register_input_mapping("rotate_camera", {Input(GLFW_MOUSE_BUTTON_MIDDLE, MOUSE)});
         //  Editor Shortcut
     }
 };

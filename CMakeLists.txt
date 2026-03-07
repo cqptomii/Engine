@@ -23,15 +23,23 @@ add_executable(Engine
         src/main.cpp
         src/glad.c
         src/engine/utils.hpp
-        src/engine/Engine.hpp
-        src/engine/window.hpp
+        src/engine/core/engine.hpp
+        src/engine/core/window.hpp
         src/engine/ecs/registry.hpp
         src/engine/ecs/entity.hpp
         src/engine/ecs/component_storage.hpp
-        src/engine/ecs/component/mesh_component.hpp
-        src/engine/ecs/component/transform_component.hpp
-        src/engine/ecs/component/LightComponent.hpp
-        src/engine/ecs/component/CameraComponent.hpp
+        src/engine/components/mesh_component.hpp
+        src/engine/components/transform_component.hpp
+        src/engine/components/light_component.hpp
+        src/engine/components/camera_component.hpp
+        src/engine/editor/editor_camera.hpp
+        src/engine/editor/editor_viewport.hpp
+        src/engine/editor/runtime_viewport.hpp
+        src/engine/core/input/input_manager.hpp
+        src/engine/core/input/input_mapping_context.hpp
+        src/engine/core/input/context/editor_mapping_context.hpp
+        src/engine/core/input/context/runtime_mapping_context.hpp
+        src/engine/core/input/input.hpp
 )
 
 # Lier GLFW et OpenGL

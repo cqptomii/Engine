@@ -12,6 +12,12 @@
 #include <string>
 #include "input.hpp"
 
+enum MappingContextType
+{
+    EDITOR,
+    RUNTIME
+};
+
 class InputMappingContext
 {
     std::unordered_map<std::string, uint32_t> action_mapping;
@@ -85,6 +91,10 @@ public:
     std::string get_action_name(const uint32_t action_id)
     {
         return this->action_names.at(action_id);
+    }
+    std::unordered_map<std::string, uint32_t>& get_action_mapping()
+    {
+        return this->action_mapping;
     }
     std::unordered_map<uint32_t, std::vector<Input>>& get_input_mapping()
     {
