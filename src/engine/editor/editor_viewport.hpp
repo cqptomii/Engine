@@ -64,6 +64,15 @@ public:
                 }
             }
         }
+
+        const float scroll_delta = input_manager.get_scroll_delta();
+        if (scroll_delta != 0.0f)
+        {
+            std::cout << "Zoom camera: " << scroll_delta << std::endl;
+            this->editor_camera.process_cam_zoom(scroll_delta);
+            this->editor_camera.debug_cam();
+        }
+
     }
 
     EditorCamera& get_editor_camera()
