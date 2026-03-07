@@ -129,7 +129,7 @@ public:
         }
 
         x_offset = current_x_pos - last_x;
-        y_offset = last_y - current_y_pos;
+        y_offset = current_y_pos - last_y;
 
         last_x = current_x_pos;
         last_y = current_y_pos;
@@ -139,6 +139,7 @@ public:
     {
         const float delta = this->scroll_delta;
         this->scroll_delta = 0.0f;
+
         return delta;
     }
     glm::vec2 get_mouse_offset()

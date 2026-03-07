@@ -59,11 +59,11 @@ public:
     int width, height;
 
 
-    Window() : width(800), height(600), cursor_x(0), cursor_y(0), window_title("Untitled")
+    Window() : cursor_x(0), cursor_y(0), window_title("Untitled"), width(800), height(600)
     {
         this->init();
     }
-    explicit Window(const int width = 800, const int height = 600, std::string title = "Untitled") : width(width), height(height), window_title(std::move(title)), cursor_x(0), cursor_y(0)
+    explicit Window(const int width = 800, const int height = 600, std::string title = "Untitled") : cursor_x(0), cursor_y(0), window_title(std::move(title)), width(width), height(height)
     {
         this->init();
     }
@@ -108,6 +108,10 @@ public:
     GLFWwindow* get_window_ptr() const noexcept
     {
         return this->window_ptr;
+    }
+    InputManager& get_input_manager()
+    {
+        return this->input_manager;
     }
     //
     // Callback functions

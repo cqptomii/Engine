@@ -33,6 +33,9 @@ class EditorCamera
     float cam_pitch;
     float cam_roll;
 
+    glm::vec3 cam_target = glm::vec3(0.0f, 0.0f, 0.0f);
+    float cam_distance = 5.0f;
+
     glm::vec3 cam_position = glm::vec3(0.0f, 0.0f, 0.0f);
     glm::vec3 cam_direction = glm::vec3(0.0f, 0.0f, -1.0f);
     glm::vec3 cam_up;
@@ -42,18 +45,12 @@ class EditorCamera
 
     void update_cam_parameters()
     {
-        // Update the cam direction by using quaternion
+        // Update the orbital camera
+        this->cam_position.x = this->cam_target.x + cam_distance * glm::cos(glm::radians(this->cam_pitch)) * glm::sin(glm::radians(this->cam_yaw));
+        this->cam_position.y = this->cam_target.y + cam_distance * glm::sin(glm::radians(this->cam_pitch));
+        this->cam_position.z = this->cam_target.z + cam_distance * glm::cos(glm::radians(this->cam_pitch)) * glm::cos(glm::radians(this->cam_yaw));
 
-        const glm::quat rotation = glm::quat(glm::vec3(
-            glm::radians(cam_pitch),
-            glm::radians(cam_yaw),
-            glm::radians(cam_roll)
-            ));
-
-
-        // Update cam vectors
-        glm::vec3 front = glm::vec3(0.0f, 0.0f, -1.0f);
-        cam_direction = glm::normalize(rotation * front);
+        this->cam_direction = glm::normalize(this->cam_target - this->cam_position);
 
         cam_right = glm::normalize(glm::cross(cam_direction, v_up));
         cam_up = glm::normalize(glm::cross(cam_right, cam_direction));
@@ -88,22 +85,26 @@ public:
 
         if (direction == BACKWARD)
         {
-            this->cam_position -= forward * speed;
+            this->cam_target -= forward * speed;
         }else if (direction == FORWARD)
         {
-            this->cam_position += forward * speed;
+            this->cam_target += forward * speed;
         }else if (direction == LEFT)
         {
-            this->cam_position -= this->cam_right * speed;
+            this->cam_target -= this->cam_right * speed;
         }
         else if (direction == RIGHT)
         {
-            this->cam_position += this->cam_right * speed;
+            this->cam_target += this->cam_right * speed;
         }
+
+        this->update_cam_parameters();
     }
     void process_cam_movement(const glm::vec3& direction)
     {
-        this->cam_position += direction * this->cam_sensitivity;
+        this->cam_target += direction * this->cam_sensitivity;
+
+        this->update_cam_parameters();
     }
     void process_cam_rotation(const float x_offset, const float y_offset, const float z_offset, GLboolean constrainPitch = true)
     {
@@ -127,9 +128,11 @@ public:
     }
     void process_cam_zoom(const float y_offset)
     {
-        this->cam_fov -= y_offset;
-        if (this->cam_fov < 1.0f) this->cam_fov = 1.0f;
-        if (this->cam_fov > 55.0f) this->cam_fov = 55.0f;
+        cam_distance -= y_offset * 5*this->cam_sensitivity;
+        if (this->cam_distance < 1.0f) this->cam_distance = 1.0f;
+        if (cam_distance > 100.0f) cam_distance = 100.0f;
+
+        this->update_cam_parameters();
     }
 
     glm::vec3 get_position() const noexcept
