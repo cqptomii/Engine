@@ -14,8 +14,10 @@ public:
     EditorMappingContext()
     {
         // Camera movement
-        this->register_input_mapping("move_camera", {Input(GLFW_KEY_LEFT_SHIFT, KEYBOARD)});
+        this->register_input_mapping("move_camera", {Input(GLFW_KEY_LEFT_SHIFT, KEYBOARD), Input(GLFW_MOUSE_BUTTON_MIDDLE, MOUSE)});
         this->register_input_mapping("rotate_camera", {Input(GLFW_MOUSE_BUTTON_MIDDLE, MOUSE)});
+        this->register_input_mapping("camera_forward", {Input(GLFW_KEY_S, KEYBOARD)});
+        this->register_input_mapping("camera_backward", {Input(GLFW_KEY_W, KEYBOARD)});
         //  Editor Shortcut
     }
 };

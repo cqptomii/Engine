@@ -21,17 +21,23 @@ class InputManager
     std::unordered_map<int, int> key_state;
 
     // mouse data
-    glm::vec2 mouse_position = glm::vec2(0.0f);
-    glm::vec2 mouse_delta = glm::vec2(0.0f);
-    float scroll_delta = 0.0f;
+    float last_x = 0.0f;
+    float last_y = 0.0f;
+
+    float x_offset = 0.0f;
+    float y_offset = 0.0f;
     bool first_movement = true;
+
+    float scroll_delta = 0.0f;
+
 
 public:
 
     InputManager()
     {
         // By default, we are in the Editor Mode
-        this->input_mapping_context = std::make_unique<InputMappingContext>();
+        this->input_mapping_context = std::make_unique<InputMappingContext>(EditorMappingContext());
+        this->input_mapping_context->debug_mapping();
     }
     explicit InputManager(std::unique_ptr<InputMappingContext> input_mapping_context)
     {
@@ -59,22 +65,36 @@ public:
         for (auto& [action_id, inputs] : this->input_mapping_context->get_input_mapping())
         {
             bool is_active = true;
+
+            std::unordered_set<int> pressed_keys;
+            for (const auto& [key, state] : key_state)
+            {
+                if (state != GLFW_RELEASE)
+                {
+                    pressed_keys.insert(key);
+                }
+            }
+
+
+
             for (Input& input : inputs)
             {
-                const int input_key = input.get_input_key();
-
-                if (!key_state.at(input_key))
+                if (!pressed_keys.contains(input.get_input_key()))
                 {
                     is_active = false;
+                    break;
                 }
             }
 
             // Add the action only if all the inputs are triggered
             if (is_active)
             {
-                this->active_actions.insert(action_id);
-                std::cout << "Action " << this->input_mapping_context->get_action_name(action_id) << " triggered" << std::endl;
+                if (pressed_keys.size() == inputs.size())
+                {
+                    this->active_actions.insert(action_id);
+                }
             }
+
         }
     }
 
@@ -87,25 +107,32 @@ public:
     }
     void on_mouse_button_event(int button, int action, int mods)
     {
+        std::cout << "Mouse button " << button << " " << action << std::endl;
         key_state[button] = action;
     }
-    void on_mouse_scroll(double x_offset, double y_offset)
+    void on_mouse_scroll(double xoffset, double yoffset)
     {
-        this->scroll_delta = static_cast<float>(y_offset);
+        this->scroll_delta = static_cast<float>(yoffset);
     }
     void on_mouse_move(const double x_pos, const double y_pos)
     {
         const auto current_x_pos = static_cast<float>(x_pos);
         const auto current_y_pos = static_cast<float>(y_pos);
 
+        // Update last position
+
         if (this->first_movement)
         {
-            this->mouse_position = glm::vec2(current_x_pos, current_y_pos);
+            last_x = current_x_pos;
+            last_y = current_y_pos;
             this->first_movement = false;
         }
 
+        x_offset = current_x_pos - last_x;
+        y_offset = last_y - current_y_pos;
 
-        this->mouse_delta = glm::vec2(current_x_pos - this->mouse_position.x, current_y_pos - this->mouse_position.y);
+        last_x = current_x_pos;
+        last_y = current_y_pos;
     }
 
     float get_scroll_delta()
@@ -114,11 +141,14 @@ public:
         this->scroll_delta = 0.0f;
         return delta;
     }
-    glm::vec2 get_mouse_delta()
+    glm::vec2 get_mouse_offset()
     {
-        auto delta = glm::vec2(0.0f);
-        this->mouse_delta = glm::vec2(0.0f);
-        return delta;
+        glm::vec2 offset = {x_offset, y_offset};
+
+        x_offset = 0;
+        y_offset = 0;
+
+        return offset;
     }
 
 

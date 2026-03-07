@@ -6,92 +6,69 @@
 #define EDITOR_VIEWPORT_HPP
 
 
-#include <memory>
-#include <GLFW/glfw3.h>
 #include "editor_camera.hpp"
-#include "../core/input/context/editor_mapping_context.hpp"
-#include "../core/window.hpp"
-
+#include "engine/core/input/input_manager.hpp"
 
 
 class EditorViewport{
-
-    std::unique_ptr<Window> editor_window;
     EditorCamera editor_camera;
-
-    bool first_movement = false;
-
-    // Mouse last position, by default to 0.0f
-    float mouse_last_x = 0.0f;
-    float mouse_last_y = 0.0f;
-
-    void init_viewport()
-    {
-        GLFWwindow* win = this->editor_window->get_window_ptr();
-
-        glfwSetWindowUserPointer(win, this);
-
-        // Set mouse pos callback function
-        glfwSetCursorPosCallback(win, [](GLFWwindow* window, double x_pos, double y_pos)
-        {
-            const auto viewport = static_cast<EditorViewport*>(glfwGetWindowUserPointer(window));
-            viewport->on_mouse_move(x_pos, y_pos);
-        });
-
-        // Set the mouse scroll callback function
-        glfwSetScrollCallback(win, [](GLFWwindow* window, double x_offset, double y_offset)
-        {
-            const auto viewport = static_cast<EditorViewport*>(glfwGetWindowUserPointer(window));
-            viewport->on_mouse_scroll(x_offset, y_offset);
-        });
-    }
 
 public:
 
-    EditorViewport() : editor_window(std::make_unique<Window>()), editor_camera(EditorCamera())
+    EditorViewport() : editor_camera(EditorCamera())
     {
-        this->init_viewport();
+        // Show cam Position
+        this->editor_camera.debug_cam();
     }
-    EditorViewport( std::unique_ptr<Window> window, EditorCamera camera) : editor_window(std::move(window)), editor_camera(camera)
-    {
-        this->init_viewport();
-    }
+    EditorViewport(EditorCamera camera) : editor_camera(camera){}
     ~EditorViewport() = default;
 
-    void on_mouse_move(double x_in, double y_in)
+    void update(InputManager& input_manager)
     {
-        const auto x_pos = static_cast<float>(x_in);
-        const auto y_pos = static_cast<float>(y_in);
+        std::unordered_map<std::string, uint32_t> action_mapping = input_manager.get_action_mapping();
 
-        // Calculate the offset between two positions
-        if (this->first_movement)
+        for (auto& [action_name, action_id] : action_mapping)
         {
-            this->mouse_last_x = x_pos;
-            this->mouse_last_y = y_pos;
-            this->first_movement = false;
+            if (input_manager.is_action_active(action_id))
+            {
+                if (action_name == "move_camera")
+                {
+                    std::cout << "Move camera" << std::endl;
+                    //Update cam position with the mouse movement
+                    const glm::vec3 mouse_delta = {input_manager.get_mouse_offset(),0};
+                    this->editor_camera.process_cam_movement(mouse_delta);
+
+                    // Show cam Position
+                    this->editor_camera.debug_cam();
+
+                }else if (action_name == "rotate_camera")
+                {
+                    std::cout << "Rotate camera" << std::endl;
+                    const glm::vec2 mouse_delta = input_manager.get_mouse_offset();
+                    std::cout << mouse_delta.x << " " << mouse_delta.y << std::endl;
+                    this->editor_camera.process_cam_rotation(mouse_delta.x, mouse_delta.y, 0);
+
+                    // Show cam Position
+                    this->editor_camera.debug_cam();
+                }else if (action_name == "camera_forward")
+                {
+                    this->editor_camera.process_cam_movement(FORWARD, 0.1);
+
+                    // Show cam Position
+                    this->editor_camera.debug_cam();
+                }else if (action_name == "camera_backward")
+                {
+                    this->editor_camera.process_cam_movement(BACKWARD, 0.1);
+                    // Show cam Position
+                    this->editor_camera.debug_cam();
+                }
+            }
         }
-
-        const float x_offset = x_pos - this->mouse_last_x;
-        const float y_offset = y_pos - this->mouse_last_y;
-
-        this->mouse_last_x = x_pos;
-        this->mouse_last_y = y_pos;
-
-
-        // Translate the camera
-
-
-        // Update the camera rotation
-        this->editor_camera.process_cam_rotation(
-            x_offset,
-            y_offset,
-            0
-        );
     }
-    void on_mouse_scroll(double x_offset, double y_offset)
+
+    EditorCamera& get_editor_camera()
     {
-        // Update the fov of the camera
-        this->editor_camera.process_cam_zoom(static_cast<float>(y_offset));
+        return this->editor_camera;
     }
 };
 

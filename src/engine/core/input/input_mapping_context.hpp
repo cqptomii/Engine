@@ -104,6 +104,18 @@ public:
     {
         return this->input_mapping.at(this->get_action_id(action_name));
     }
+
+    void debug_mapping()
+    {
+        for (auto& [action_id, inputs] : this->get_input_mapping())
+        {
+            std::cout << "Action ID: " << action_id << std::endl;
+            for (const auto& input : inputs)
+            {
+                std::cout << "Input: " << input.get_input_key() << std::endl;
+            }
+        }
+    }
 };
 
 #endif //ENGINE_INPUT_MAPPING_CONTEXT_HPP
