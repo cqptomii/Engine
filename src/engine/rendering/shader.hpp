@@ -6,59 +6,25 @@
 #define ENGINE_SHADER_HPP
 
 #include <glad/glad.h>
+#include <glm/glm.hpp>
 #include <string>
-#include <fstream>
-#include <sstream>
 #include <iostream>
-
-#include "glm/fwd.hpp"
-#include "glm/gtc/type_ptr.hpp"
 
 class Shader
 {
     unsigned int program_id;
 public:
 
-    Shader(const char* vertex_path, const char* fragment_path) : program_id(0)
+    Shader(const std::string& vertex_source, const std::string& fragment_source) : program_id(0)
     {
-        std::string vertex_source;
-        std::string fragment_source;
-        std::ifstream vertex_shader_file;
-        std::ifstream fragment_shader_file;
-
-        vertex_shader_file.exceptions( std::ifstream::failbit | std::ifstream::badbit );
-        fragment_shader_file.exceptions( std::ifstream::failbit | std::ifstream::badbit );
-        try
-        {
-            vertex_shader_file.open(vertex_path);
-            fragment_shader_file.open(fragment_path);
-            std::stringstream vertex_stream, fragment_stream;
-
-            // read file
-            vertex_stream << vertex_shader_file.rdbuf();
-            fragment_stream << fragment_shader_file.rdbuf();
-
-            // Close each file
-            vertex_shader_file.close();
-            fragment_shader_file.close();
-
-            // Get the string associated which each shader
-            fragment_source = fragment_stream.str();
-            vertex_source = vertex_stream.str();
-        } catch (std::ifstream::failure e)
-        {
-            std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ" << std::endl;
-        }
-
         const char* vertex_shader_str = vertex_source.c_str();
         const char* fragment_shader_str = fragment_source.c_str();
 
-        unsigned int vertex_shader, fragment_shader;
         int success;
         char infoLog[512];
 
         // Compile the vertex shader
-        vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+        unsigned int vertex_shader = glCreateShader(GL_VERTEX_SHADER);
         glShaderSource(vertex_shader, 1, &vertex_shader_str, nullptr);
         glCompileShader(vertex_shader);
 
@@ -70,7 +36,7 @@ public:
         }
 
         // Compile the Fragment shader
-        fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+        unsigned int fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
         glShaderSource(fragment_shader, 1, &fragment_shader_str, nullptr);
         glCompileShader(fragment_shader);
 
@@ -106,9 +72,13 @@ public:
     }
 
     // Use the shader
-    void bind() const
+    void use() const
     {
         glUseProgram(this->program_id);
+    }
+    static void unuse()
+    {
+        glUseProgram(0);
     }
 
     // Bind Uniform value into the shader
