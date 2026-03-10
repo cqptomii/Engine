@@ -30,7 +30,11 @@ public:
 
     constexpr bool operator!=(const Entity& other) const
     {
-        return this->_index != other._index && this->_generation != other._generation;
+        return this->_index != other._index || this->_generation != other._generation;
+    }
+    constexpr bool operator==(const Entity& other) const
+    {
+        return this->_index == other._index && this->_generation == other._generation;
     }
     constexpr explicit operator bool() const noexcept
     {
