@@ -12,6 +12,7 @@
 
 class EditorViewport{
     EditorCamera editor_camera;
+    bool verbose = false;
 
 public:
 
@@ -39,7 +40,8 @@ public:
                     this->editor_camera.process_cam_movement(mouse_delta);
 
                     // Show cam Position
-                    this->editor_camera.debug_cam();
+                    if (this->verbose)
+                        this->editor_camera.debug_cam();
 
                 }else if (action_name == "rotate_camera")
                 {
@@ -49,7 +51,8 @@ public:
                     this->editor_camera.process_cam_rotation(mouse_delta.x, mouse_delta.y, 0);
 
                     // Show cam Position
-                    this->editor_camera.debug_cam();
+                    if (this->verbose)
+                        this->editor_camera.debug_cam();
                 }
             }
         }
