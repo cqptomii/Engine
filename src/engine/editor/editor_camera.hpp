@@ -79,7 +79,7 @@ public:
 
     void process_cam_movement(const CameraMovement direction, const float delta_time)
     {
-        const float speed = this->cam_velocity * delta_time;
+        const float speed = this->cam_sensitivity * delta_time;
 
         const glm::vec3 forward = glm::normalize(this->cam_direction);
 

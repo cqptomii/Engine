@@ -50,17 +50,6 @@ public:
 
                     // Show cam Position
                     this->editor_camera.debug_cam();
-                }else if (action_name == "camera_forward")
-                {
-                    this->editor_camera.process_cam_movement(FORWARD, 0.1);
-
-                    // Show cam Position
-                    this->editor_camera.debug_cam();
-                }else if (action_name == "camera_backward")
-                {
-                    this->editor_camera.process_cam_movement(BACKWARD, 0.1);
-                    // Show cam Position
-                    this->editor_camera.debug_cam();
                 }
             }
         }
