@@ -14,7 +14,7 @@
 
 struct MaterialParameter
 {
-    std::variant<float, glm::vec2, glm::vec3, ResourceHandle<TextureResource>> value;
+    std::variant<float, int, glm::vec2, glm::vec3, glm::vec4, glm::mat4, ResourceHandle<TextureResource>> value;
 };
 
 
@@ -31,9 +31,15 @@ public:
     {
         this->parameters[name] = parameter;
     }
-    MaterialParameter get_parameter(const std::string& name)
+    MaterialParameter* get_parameter(const std::string& name)
     {
-        return this->parameters[name];
+        const auto it = this->parameters.find(name);
+        if (it != this->parameters.end())
+        {
+            return &it->second;
+        }
+
+        return nullptr;
     }
     void delete_parameter(const std::string& name)
     {
