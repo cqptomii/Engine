@@ -37,6 +37,9 @@ class Window
             exit(EXIT_FAILURE);
         }
 
+        // Enable Blending
+        enable_blending();
+
         glViewport(0,0, this->width, this->height);
 
         // Set Callback functions
@@ -153,6 +156,27 @@ public:
         glfwSwapBuffers(this->window_ptr);
         // Poll for and process events
         glfwPollEvents();
+    }
+
+    static void set_depth_test(const bool enable)
+    {
+        if (enable)
+        {
+            glEnable(GL_DEPTH_TEST);
+        }
+        else
+        {
+            glDisable(GL_DEPTH_TEST);
+        }
+    }
+    static void disable_blending()
+    {
+        glDisable(GL_BLEND);
+    }
+    static void enable_blending()
+    {
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     }
 };
 
