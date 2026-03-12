@@ -11,6 +11,7 @@
 #include "component_storage.hpp"
 #include <unordered_map>
 #include <memory>
+#include <ranges>
 #include <vector>
 #include <typeindex>
 
@@ -26,6 +27,16 @@ public:
     Entity create_entity()
     {
         return this->entities.create();
+    }
+    void remove_entity(const Entity entity)
+    {
+        // remove all component linked with this entity
+        for (auto& storage : this->pools | std::views::values)
+        {
+            storage->remove(entity);
+        }
+        // remove the entity
+        this->entities.remove(entity);
     }
 
     template<typename T>
@@ -56,10 +67,11 @@ public:
         return this->storage<T>().get(entity);
     }
 
-    template<typename First, typename... Rest>
-    void view()
+    template<typename First, typename... Rest, typename Func>
+    void view(Func&& func)
     {
-        auto& first = storage<First>();
+        // Trouve le plus petit storage pour minimiser les itérations
+        ComponentStorage<First>& first = storage<First>();
 
         for (auto& element : first.data())
         {
@@ -67,10 +79,7 @@ public:
 
             if ((storage<Rest>().contains(e) && ...))
             {
-                run_system(
-                    first.get(e),
-                    storage<Rest>().get(e)...
-                );
+                func(e, first.get(e), storage<Rest>().get(e)...);
             }
         }
     }

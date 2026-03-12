@@ -35,7 +35,7 @@ public:
 
         return {id, generations[id]};
     }
-    void destroy(const Entity e)
+    void remove(const Entity e)
     {
         generations[e.get_index()]++;
         free_list.push_back(e.get_index());

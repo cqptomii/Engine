@@ -9,6 +9,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 
+#include "glm/gtx/quaternion.hpp"
+
 class TransformComponent
 {
     glm::vec3 position;
@@ -31,6 +33,10 @@ public:
     glm::vec3 get_scale() const noexcept
     {
         return this->scale;
+    }
+    glm::mat4 get_model_matrix() const noexcept
+    {
+        return glm::translate(glm::mat4(1.0f), this->position) * glm::toMat4(this->rotation) * glm::scale(glm::mat4(1.0f), this->scale);
     }
 
     bool operator==(const TransformComponent& other) const
