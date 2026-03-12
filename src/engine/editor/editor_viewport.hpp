@@ -7,10 +7,12 @@
 
 
 #include "editor_camera.hpp"
+#include "iviewport.hpp"
 #include "engine/core/input/input_manager.hpp"
+#include <../src/engine/scene/Scene.hpp>
 
 
-class EditorViewport{
+class EditorViewport : public IViewport{
     EditorCamera editor_camera;
     bool verbose = false;
 
@@ -21,10 +23,11 @@ public:
         // Show cam Position
         this->editor_camera.debug_cam();
     }
-    EditorViewport(EditorCamera camera) : editor_camera(camera){}
-    ~EditorViewport() = default;
 
-    void update(InputManager& input_manager)
+    explicit EditorViewport(const EditorCamera& camera) : editor_camera(camera){}
+    ~EditorViewport() override = default;
+
+    void update(Scene& scene, InputManager& input_manager) override
     {
         std::unordered_map<std::string, uint32_t> action_mapping = input_manager.get_action_mapping();
 
@@ -67,7 +70,7 @@ public:
 
     }
 
-    EditorCamera& get_editor_camera()
+    EditorCamera& get_main_camera() override
     {
         return this->editor_camera;
     }
