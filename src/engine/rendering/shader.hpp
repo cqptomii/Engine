@@ -7,18 +7,19 @@
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <string>
 #include <iostream>
+#include "../src/engine/resources/shader_resource.hpp"
 
 class Shader
 {
     unsigned int program_id;
 public:
-
-    Shader(const std::string& vertex_source, const std::string& fragment_source) : program_id(0)
+    explicit Shader(const ShaderResource& shader_resource) : program_id(0)
     {
-        const char* vertex_shader_str = vertex_source.c_str();
-        const char* fragment_shader_str = fragment_source.c_str();
+        const char* vertex_shader_str = shader_resource.get_vertex_source().c_str();
+        const char* fragment_shader_str = shader_resource.get_fragment_source().c_str();
 
         int success;
         char infoLog[512];
