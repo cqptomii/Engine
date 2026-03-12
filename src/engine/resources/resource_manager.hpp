@@ -9,7 +9,7 @@
 #include <unordered_map>
 #include "resource_handle.hpp"
 #include "shader_resource.hpp"
-#include "material_instance.hpp"
+#include "material/material_instance.hpp"
 #include "model_resource.hpp"
 
 class ResourceManager

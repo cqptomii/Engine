@@ -5,9 +5,9 @@
 #ifndef ENGINE_MATERIAL_RESOURCE_HPP
 #define ENGINE_MATERIAL_RESOURCE_HPP
 
-#include "resource_handle.hpp"
-#include "shader_resource.hpp"
-#include "texture_resource.hpp"
+#include "../resource_handle.hpp"
+#include "../shader_resource.hpp"
+#include "../texture_resource.hpp"
 #include "../src/engine/utils.hpp"
 #include <unordered_map>
 #include <variant>
