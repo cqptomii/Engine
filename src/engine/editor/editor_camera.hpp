@@ -8,8 +8,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
-
-#include "glad/glad.h"
+#include <glad/glad.h>
+#include "../src/engine/rendering/camera_data.hpp"
 
 enum CameraMovement
 {
@@ -22,7 +22,7 @@ enum CameraMovement
 class EditorCamera
 {
     float near_plane = 0.1f;
-    float far_plane = 1000.0f;
+    float far_plane = 100.0f;
     float aspect_ratio = 16./9.;
     bool first_move = false;
 
@@ -75,6 +75,22 @@ public:
     {
         this->aspect_ratio = static_cast<float>(w_width) / static_cast<float>(w_height);
         return glm::perspective(glm::radians(this->cam_fov), this->aspect_ratio, this->near_plane, this->far_plane);
+    }
+    glm::vec3 get_position() const noexcept
+    {
+        return this->cam_position;
+    }
+    glm::vec3 get_direction() const noexcept
+    {
+        return this->cam_direction;
+    }
+    CameraData get_camera_data(const int width, const int height)
+    {
+        return {
+            this->get_view_matrix(),
+            this->get_projection_matrix(width, height),
+            this->cam_position,
+        };
     }
 
     void process_cam_movement(const CameraMovement direction, const float delta_time)
@@ -135,21 +151,13 @@ public:
         this->update_cam_parameters();
     }
 
-    glm::vec3 get_position() const noexcept
-    {
-        return this->cam_position;
-    }
-    glm::vec3 get_direction() const noexcept
-    {
-        return this->cam_direction;
-    }
-
     void debug_cam()
     {
         // Show cam Position
         std::cout << "Editor Camera Position: " << cam_position[0] << " " << cam_position[1] << " " << cam_position[2] << std::endl;
         std::cout << "Editor Camera Direction: " << cam_direction[0] << " " << cam_direction[1] << " " << cam_direction[2] << std::endl;
     }
+
 };
 
 
