@@ -74,6 +74,11 @@ public:
         glBindVertexArray(this->vao);
         glDrawElements(drawing_mode, this->triangle_amount, GL_UNSIGNED_INT, nullptr);
     }
+
+    bool operator<(const Mesh& other) const
+    {
+        return this->triangle_amount < other.triangle_amount;
+    }
 };
 
 #endif //ENGINE_MESH_HPP

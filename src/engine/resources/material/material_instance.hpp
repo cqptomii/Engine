@@ -5,8 +5,8 @@
 #ifndef ENGINE_MATERIAL_INSTANCE_HPP
 #define ENGINE_MATERIAL_INSTANCE_HPP
 
-#include "../material_resource.hpp"
-#include "../resource_handle.hpp"
+#include "../src/engine/resources/material/material_resource.hpp"
+#include "../src/engine/resources/resource_handle.hpp"
 #include <unordered_map>
 
 class MaterialInstance
@@ -54,6 +54,15 @@ public:
     const std::unordered_map<uint32_t, MaterialParameter>& get_overrides() const
     {
         return this->overrides;
+    }
+
+    bool operator<(const MaterialInstance& other) const
+    {
+        return this->material_resource.id < other.material_resource.id;
+    }
+    bool operator==(const MaterialInstance& other) const
+    {
+        return this->material_resource.id == other.material_resource.id;
     }
 };
 

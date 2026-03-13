@@ -6,7 +6,7 @@
 #define ENGINE_MATERIAL_COMPONENT_HPP
 
 #include "../src/engine/resources/resource_handle.hpp"
-#include "../src/engine/resources/material_instance.hpp"
+#include "../../resources/material/material_instance.hpp"
 
 class MaterialComponent
 {

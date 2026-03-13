@@ -36,7 +36,14 @@ class MaterialResource
     std::unordered_map<uint32_t, MaterialParameter> parameters;
 
 public:
-    explicit MaterialResource(const ResourceHandle<ShaderResource> shader) : shader(shader){}
+    explicit MaterialResource(const ResourceHandle<ShaderResource> shader, const std::vector<ResourceHandle<TextureResource>> textures) : shader(shader)
+    {
+        // Update parameters to add textures into the material
+        for (auto& texture : textures)
+        {
+            this->parameters[texture.id] = MaterialParameter{texture};
+        }
+    }
     ~MaterialResource() = default;
 
     ResourceHandle<ShaderResource> get_shader() const
@@ -75,6 +82,15 @@ public:
     const std::unordered_map<uint32_t, MaterialParameter>& get_parameters() const
     {
         return this->parameters;
+    }
+
+    bool operator<(const MaterialResource& other) const
+    {
+        return this->parameters.size() < other.parameters.size();
+    }
+    bool operator==(const MaterialResource& other) const
+    {
+        return this->shader.id == other.shader.id && this->parameters.size() == other.parameters.size();
     }
 };
 
