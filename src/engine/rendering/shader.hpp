@@ -135,7 +135,6 @@ public:
     {
         glUniformMatrix4fv(glGetUniformLocation(this->program_id, name.c_str()), 1, GL_FALSE, glm::value_ptr(matrix));
     }
-
 };
 
 
