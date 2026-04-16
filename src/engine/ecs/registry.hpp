@@ -5,88 +5,75 @@
 #ifndef REGISTRY_HPP
 #define REGISTRY_HPP
 
-#include <cstdint>
-#include "entity.hpp"
-#include "entity_manager.hpp"
-#include "component_storage.hpp"
-#include <unordered_map>
-#include <memory>
-#include <ranges>
-#include <vector>
-#include <typeindex>
+#include <utility>
+#include <entt/entt.hpp>
 
 class Registry
 {
-    EntityManager entities;
-
-    // Map within a component type id and an array of entity related to a component
-    std::unordered_map<std::type_index, std::unique_ptr<IComponentStorage>> pools;
+    entt::registry entt_registry;
 
 public:
     Registry() = default;
-    Entity create_entity()
+
+    entt::entity create_entity()
     {
-        return this->entities.create();
-    }
-    void remove_entity(const Entity entity)
-    {
-        // remove all component linked with this entity
-        for (auto& storage : this->pools | std::views::values)
-        {
-            storage->remove(entity);
-        }
-        // remove the entity
-        this->entities.remove(entity);
+        return this->entt_registry.create();
     }
 
-    template<typename T>
-    ComponentStorage<T>& storage()
+    void remove_entity(const entt::entity entity)
     {
-        const auto storage_index = std::type_index(typeid(T));
-        if (!this->pools.contains(storage_index))
+        if (!this->entt_registry.valid(entity))
         {
-            this->pools[storage_index] = std::make_unique<ComponentStorage<T>>();
+            return;
         }
 
-        return static_cast<ComponentStorage<T>&>(*this->pools[storage_index]);
+        this->entt_registry.destroy(entity);
     }
 
     template<typename T>
-    void add(Entity entity, T component)
+    decltype(auto) storage()
     {
-        this->storage<T>().insert(entity, component);
+        return this->entt_registry.storage<T>();
     }
+
     template<typename T>
-    void remove(Entity entity)
+    void add(const entt::entity entity, T component)
     {
-        this->storage<T>().remove(entity);
+        this->entt_registry.emplace_or_replace<T>(entity, std::move(component));
     }
+
     template<typename T>
-    T& get(Entity entity)
+    void remove(const entt::entity entity)
     {
-        return this->storage<T>().get(entity);
+        if (!this->entt_registry.valid(entity))
+        {
+            return;
+        }
+
+        this->entt_registry.remove<T>(entity);
+    }
+
+    template<typename T>
+    T& get(const entt::entity entity)
+    {
+        return this->entt_registry.get<T>(entity);
     }
 
     template<typename First, typename... Rest, typename Func>
     void view(Func&& func)
     {
-        // Trouve le plus petit storage pour minimiser les itérations
-        ComponentStorage<First>& first = storage<First>();
+        auto ecs_view = this->entt_registry.view<First, Rest...>();
 
-        for (auto& element : first.data())
+        for (const entt::entity entt_entity : ecs_view)
         {
-            Entity e = element.entity;
-
-            if ((storage<Rest>().contains(e) && ...))
-            {
-                func(e, first.get(e), storage<Rest>().get(e)...);
-            }
+            func(entt_entity, ecs_view.template get<First>(entt_entity), ecs_view.template get<Rest>(entt_entity)...);
         }
     }
 
+    entt::registry& raw()
+    {
+        return this->entt_registry;
+    }
 };
-
-
-
 
 #endif //REGISTRY_HPP

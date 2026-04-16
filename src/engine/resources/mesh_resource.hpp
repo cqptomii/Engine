@@ -36,16 +36,33 @@ class MeshResource
 public:
     MeshResource(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices) : vertices(vertices), indices(indices) {}
 
+    void add_submesh(const SubMesh& submesh)
+    {
+        this->submeshes.push_back(submesh);
+    }
+    void add_submesh(const uint32_t index_offset, const uint32_t index_count, const ResourceHandle<MaterialInstance>& material)
+    {
+        SubMesh submesh{index_offset, index_count, material};
+        this->submeshes.push_back(submesh);
+    }
 
-    std::vector<Vertex> get_vertices() const noexcept
+    std::vector<Vertex>& get_vertices()
     {
         return this->vertices;
     }
-    std::vector<unsigned int> get_indices() const noexcept
+    const std::vector<Vertex>& get_vertices() const
+    {
+        return this->vertices;
+    }
+    std::vector<unsigned int>& get_indices()
     {
         return this->indices;
     }
-    std::vector<SubMesh> get_submeshes() const noexcept
+    const std::vector<unsigned int>& get_indices() const
+    {
+        return this->indices;
+    }
+    std::vector<SubMesh>& get_submeshes()
     {
         return this->submeshes;
     }

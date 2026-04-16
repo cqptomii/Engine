@@ -15,6 +15,8 @@
 class Shader
 {
     unsigned int program_id;
+
+    std::unordered_map<uint32_t, GLint> uniform_locations;
 public:
     explicit Shader(const ShaderResource& shader_resource) : program_id(0)
     {
@@ -80,6 +82,24 @@ public:
     static void unuse()
     {
         glUseProgram(0);
+    }
+
+    void cache_uniform(const std::string& name)
+    {
+        uint32_t id = hash_string(name);
+        GLint location = glGetUniformLocation(program_id, name.c_str());
+
+        if (location != -1)
+            uniform_locations[id] = location;
+    }
+    GLint get_location(uint32_t id)
+    {
+        auto it = uniform_locations.find(id);
+
+        if (it != uniform_locations.end())
+            return it->second;
+
+        return -1;
     }
 
     // Bind Uniform value into the shader

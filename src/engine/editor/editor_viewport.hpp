@@ -7,9 +7,9 @@
 
 
 #include "editor_camera.hpp"
-#include "iviewport.hpp"
+#include "engine/editor/iviewport.hpp"
 #include "engine/core/input/input_manager.hpp"
-#include <../src/engine/scene/Scene.hpp>
+#include "engine/scene/Scene.hpp"
 
 
 class EditorViewport : public IViewport{

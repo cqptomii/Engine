@@ -32,31 +32,31 @@ public:
         return this->resource_manager;
     }
     template<typename T>
-    void add_component(Entity e, T component)
+    void add_component(const entt::entity e, T component)
     {
         this->registry.add(e, component);
     }
     template<typename T>
-    void remove_component(const Entity entity)
+    void remove_component(const entt::entity entity)
     {
         this->registry.remove<T>(entity);
     }
 
-    Entity add_object()
+    entt::entity add_object()
     {
         return this->registry.create_entity();
     }
-    void remove_object(const Entity entity)
+    void remove_object(const entt::entity entity)
     {
         this->registry.remove_entity(entity);
     }
 
     template<typename T>
-    T& get_component(const Entity entity)
+    T& get_component(const entt::entity entity)
     {
         return this->registry.get<T>(entity);
     }
-    Entity& get_entity(glm::vec2 cursor_pos);
+    entt::entity get_entity(glm::vec2 cursor_pos);
 };
 
 #endif //ENGINE_SCENE_HPP

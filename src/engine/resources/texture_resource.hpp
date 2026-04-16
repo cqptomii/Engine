@@ -4,7 +4,6 @@
 
 #ifndef ENGINE_TEXTURE_RESOURCE_HPP
 #define ENGINE_TEXTURE_RESOURCE_HPP
-#define STB_IMAGE_IMPLEMENTATION
 #include <iostream>
 #include <ostream>
 #include "../src/stb_image.h"

@@ -5,6 +5,7 @@
 #ifndef ENGINE_MESH_HPP
 #define ENGINE_MESH_HPP
 
+#include <cstddef>
 #include <glad/glad.h>
 #include <vector>
 #include "../src/engine/resources/mesh_resource.hpp"
@@ -15,10 +16,10 @@ class Mesh
     unsigned int vao{}; // Vertex Array
     unsigned int vbo{}; // Vertex Buffer
     unsigned int ebo{}; // Element Buffer
-    int triangle_amount = 0;
+    int index_count = 0;
 
     template<typename T>
-    static unsigned int make_buffer( std::vector<T> vertices, const unsigned int buffer_type, const GLenum usage)
+    static unsigned int make_buffer(const std::vector<T>& data, const unsigned int buffer_type, const GLenum usage)
     {
         unsigned int buffer;
         // Generate the Vertex Buffer and bind it
@@ -26,7 +27,7 @@ class Mesh
         glBindBuffer(buffer_type, buffer);
 
         // link the vertices to the Vertex Buffer
-        glBufferData(buffer_type, vertices.size() * sizeof(T), vertices.data(), usage);
+        glBufferData(buffer_type, data.size() * sizeof(T), data.data(), usage);
 
         // unbind the Vertex Buffer
         glBindBuffer(buffer_type, 0);
@@ -34,29 +35,36 @@ class Mesh
         return buffer;
     }
 
-    void upload(const MeshResource& mesh_resource, const GLenum usage = GL_STATIC_DRAW)
+    void upload(MeshResource& mesh_resource, const GLenum usage = GL_STATIC_DRAW)
     {
 
         // Generate the vertex array
         glGenVertexArrays(1, &vao);
         glBindVertexArray(vao);
 
-        const auto vertices = mesh_resource.get_vertices();
-        const auto indices = mesh_resource.get_indices();
+        const auto& vertices = mesh_resource.get_vertices();
+        const auto& indices = mesh_resource.get_indices();
 
-        // Update the amount of triangle to draw on the viewport
-        this->triangle_amount = static_cast<int>(vertices.size()) / 3;
+        // Update the amount of indices to draw on the viewport
+        this->index_count = static_cast<int>(indices.size());
 
         // Make the vertex buffer and the element Buffer
         vbo = make_buffer(vertices, GL_ARRAY_BUFFER, usage);
         ebo = make_buffer(indices, GL_ELEMENT_ARRAY_BUFFER, usage);
 
-        // Link the vertices within the vertex Array
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), static_cast<void*>(nullptr));
+        // Link vertex position/color/normal/uv attributes from Vertex layout.
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void*>(offsetof(Vertex, vertice)));
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void*>(offsetof(Vertex, color)));
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void*>(offsetof(Vertex, normal)));
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void*>(offsetof(Vertex, texcoord)));
+        glEnableVertexAttribArray(3);
         glBindVertexArray(0);
     }
 public:
-    explicit Mesh(const MeshResource& mesh_resource, const GLenum usage = GL_STATIC_DRAW)
+    explicit Mesh(MeshResource& mesh_resource, const GLenum usage = GL_STATIC_DRAW)
     {
         this->upload(mesh_resource, usage);
     }
@@ -72,12 +80,12 @@ public:
     {
         // Bind the vertex Array before drawing on the viewport
         glBindVertexArray(this->vao);
-        glDrawElements(drawing_mode, this->triangle_amount, GL_UNSIGNED_INT, nullptr);
+        glDrawElements(drawing_mode, this->index_count, GL_UNSIGNED_INT, nullptr);
     }
 
     bool operator<(const Mesh& other) const
     {
-        return this->triangle_amount < other.triangle_amount;
+        return this->index_count < other.index_count;
     }
 };
 

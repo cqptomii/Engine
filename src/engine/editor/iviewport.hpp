@@ -12,8 +12,8 @@ class IViewport
 {
 public:
     virtual ~IViewport() = default;
-    virtual void update(Scene& scene, InputManager& input_manager);
-    virtual EditorCamera& get_main_camera();
+    virtual void update(Scene& scene, InputManager& input_manager) = 0;
+    virtual EditorCamera& get_main_camera() = 0;
 };
 
 #endif //ENGINE_IVIEWPORT_HPP

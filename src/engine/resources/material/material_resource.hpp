@@ -26,6 +26,7 @@ enum class MaterialParameterType
 
 struct MaterialParameter
 {
+    std::string name;
     std::variant<float, int, glm::vec2, glm::vec3, glm::vec4, glm::mat4, ResourceHandle<TextureResource>> value;
 };
 
@@ -36,12 +37,12 @@ class MaterialResource
     std::unordered_map<uint32_t, MaterialParameter> parameters;
 
 public:
-    explicit MaterialResource(const ResourceHandle<ShaderResource> shader, const std::vector<ResourceHandle<TextureResource>> textures) : shader(shader)
+    explicit MaterialResource(const ResourceHandle<ShaderResource> shader, const std::unordered_map<std::string, ResourceHandle<TextureResource>> textures) : shader(shader)
     {
         // Update parameters to add textures into the material
-        for (auto& texture : textures)
+        for (const auto& [name, texture] : textures)
         {
-            this->parameters[texture.id] = MaterialParameter{texture};
+            this->parameters[texture.id] = MaterialParameter{name, texture};
         }
     }
     ~MaterialResource() = default;

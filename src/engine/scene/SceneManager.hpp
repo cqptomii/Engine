@@ -1,0 +1,8 @@
+//
+// Created by tomfr on 13/03/2026.
+//
+
+#ifndef ENGINE_SCENEMANAGER_HPP
+#define ENGINE_SCENEMANAGER_HPP
+
+#endif //ENGINE_SCENEMANAGER_HPP
