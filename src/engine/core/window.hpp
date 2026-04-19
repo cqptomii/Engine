@@ -25,14 +25,37 @@ class Window
         this->window_ptr = glfwCreateWindow(this->width, this->height, this->window_title.c_str(), nullptr, nullptr);
         if (!this->window_ptr)
         {
-            std::cerr << "Failed to create GLFW window" << std::endl;
-            exit(EXIT_FAILURE);
+            const char* error_desc = nullptr;
+            const int error_code = glfwGetError(&error_desc);
+            std::cerr << "Failed to create GLFW window with OpenGL 3.3 core"
+                      << " (error " << error_code << ": "
+                      << (error_desc ? error_desc : "unknown") << ")"
+                      << std::endl;
+
+            // Fallback: relax profile/version requirements for older drivers.
+            glfwDefaultWindowHints();
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+
+            this->window_ptr = glfwCreateWindow(this->width, this->height, this->window_title.c_str(), nullptr, nullptr);
+            if (!this->window_ptr)
+            {
+                const char* fallback_desc = nullptr;
+                const int fallback_code = glfwGetError(&fallback_desc);
+                std::cerr << "Fallback context creation also failed"
+                          << " (error " << fallback_code << ": "
+                          << (fallback_desc ? fallback_desc : "unknown") << ")"
+                          << std::endl;
+                exit(EXIT_FAILURE);
+            }
         }
 
         glfwSetWindowUserPointer(this->window_ptr, this);
         glfwMakeContextCurrent(this->window_ptr);
-        // VSync is disabled to let the user choose between vsync or not in the editor settings
-        glfwSwapInterval(0);
+        
+        // By default VSync is enabled
+        set_VSync(1);
+
         if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress))
         {
             std::cerr << "Failed to initialize GLAD" << std::endl;
@@ -46,7 +69,6 @@ class Window
 
         // Set Callback functions
         glfwSetWindowSizeCallback(this->window_ptr, window_size_callback);
-
         glfwSetCursorPosCallback(this->window_ptr, mouse_pos_callback);
         glfwSetScrollCallback(this->window_ptr, scroll_callback);
         glfwSetMouseButtonCallback(this->window_ptr, mouse_button_callback);
@@ -118,6 +140,7 @@ public:
     {
         return this->input_manager;
     }
+    
     //
     // Callback functions
     //
@@ -125,7 +148,6 @@ public:
     {
         glfwSetWindowUserPointer(this->window_ptr, user_ptr);
     }
-
     static void window_size_callback(GLFWwindow* window, int width, int height)
     {
         glViewport(0, 0, width, height);
@@ -160,6 +182,11 @@ public:
         glfwPollEvents();
     }
 
+
+    static void set_VSync(const int interval)
+    {
+        glfwSwapInterval(interval);
+    }
     static void set_depth_test(const bool enable)
     {
         if (enable)
