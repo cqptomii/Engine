@@ -23,7 +23,7 @@ enum CameraMovement
 class EditorCamera
 {
     float near_plane = 0.1f;
-    float far_plane = 100.0f;
+    float far_plane = 500.0f;
     float aspect_ratio = 16./9.;
     bool first_move = false;
 

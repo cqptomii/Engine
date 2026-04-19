@@ -18,6 +18,7 @@ class EditorSystem
 
     // Editor&Runtime viewport
     std::unique_ptr<EditorViewport> editor_viewport;
+    std::unique_ptr<RuntimeViewport> runtime_viewport;
 
 
     bool is_editor_mode = true;
@@ -26,6 +27,7 @@ public:
     {
         this->is_editor_mode = true;
         this->editor_viewport = std::make_unique<EditorViewport>();
+        this->runtime_viewport = std::make_unique<RuntimeViewport>();
         this->current_viewport = this->editor_viewport.get();
     }
     void update(Scene& scene, InputManager& input_manager)
@@ -42,7 +44,10 @@ public:
         {
             this->current_viewport = this->editor_viewport.get();
         }
-        // Set the current viewport to Runtime
+        else
+        {
+            this->current_viewport = this->runtime_viewport.get();
+        }
     }
     bool get_editor_mode() const
     {
