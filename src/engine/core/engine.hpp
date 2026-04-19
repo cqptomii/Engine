@@ -16,6 +16,7 @@
 #include "engine/rendering/renderer.hpp"
 #include "engine/systems/editor_system.hpp"
 #include "engine/systems/render_system.hpp"
+#include "engine/utils.hpp"
 
 class Engine
 {
@@ -37,11 +38,24 @@ class Engine
     uint32_t fps_frame_count = 0;
     float displayed_fps = 0.0f;
 
+    static void glfw_error_callback(const int error_code, const char* description)
+    {
+        std::cerr << "GLFW Error [" << error_code << "]: "
+                  << (description ? description : "unknown") << std::endl;
+    }
+
     static void init()
     {
+        glfwSetErrorCallback(glfw_error_callback);
+
         if (!glfwInit())
         {
-            std::cerr << "Failed to initialize GLFW" << std::endl;
+            const char* error_desc = nullptr;
+            const int error_code = glfwGetError(&error_desc);
+            std::cerr << "Failed to initialize GLFW"
+                      << " (error " << error_code << ": "
+                      << (error_desc ? error_desc : "unknown") << ")"
+                      << std::endl;
             exit(EXIT_FAILURE);
         }
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -158,6 +172,9 @@ public:
         unsigned int shaderProgram = makeShaderProgram(vertexShaderSource, fragmentShaderSource);
         **/
 
+        float red = 0.0f, green = 0.0f, blue = 0.0f, alpha = 1.0f;
+        convert_hex_to_rgba(0x383c42, red, green, blue, alpha);
+
         while (this->window_ptr->isOpen())
         {
             const float current_frame = static_cast<float>(glfwGetTime());
@@ -171,10 +188,9 @@ public:
 
 
             // process inputs
-
             this->input_manager.update();
 
-            glClearColor(1.f, 1.f, 1.f, 1.0f);
+            glClearColor(red, green, blue, alpha);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             // Update viewports
@@ -189,17 +205,14 @@ public:
             this->render_system.update(
                 this->current_scene,
                 editor_camera,
-                queue,
-                this->editor_system.get_editor_mode()
-                );
+                queue
+            );
 
             // Sort the rendering commands
             queue.sort();
 
-            // Execute each rendering command
-            this->renderer.execute(queue, resource_manager);
-            queue.clear();
-
+            // Render the scene on the screen
+            this->renderer.render(editor_camera, queue, this->current_scene.get_resource_manager(), this->editor_system.get_editor_mode());
 
             // Window buffer Update
             this->window_ptr->update();
