@@ -1,7 +1,6 @@
 #ifndef UBO_TYPES_HPP
 #define UBO_TYPES_HPP
 
-
 #include <glm/glm.hpp>
 
 struct CameraUBO
@@ -9,6 +8,7 @@ struct CameraUBO
     glm::mat4 view;
     glm::mat4 projection;
 };
+
 struct ObjectUBO
 {
     glm::mat4 model;

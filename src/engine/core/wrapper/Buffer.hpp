@@ -1,8 +1,12 @@
+#ifndef BUFFER_WRAPPER_HPP
+#define BUFFER_WRAPPER_HPP
 
+#include <cstddef>
+#include <glad/glad.h>
 
 class Buffer
 {
-    private:
+private:
     GLuint id;
     GLenum target;
     size_t size;
@@ -30,7 +34,7 @@ public:
     }
 
     void updateData(size_t offset, size_t size, const void* data) {
-        if (offset + size > this->size) return
+        if (offset + size > this->size) return;
 
         glBindBuffer(target, id);
         glBufferSubData(target, offset, size, data);
@@ -40,8 +44,14 @@ public:
         glBindBuffer(target, id);
     }
 
+    void unbind() const {
+        glBindBuffer(target, 0);
+    }
+
     void bindBase(GLuint binding) const {
         glBindBufferBase(target, binding, id);
     }
 
-}
+};
+
+#endif // BUFFER_WRAPPER_HPP
