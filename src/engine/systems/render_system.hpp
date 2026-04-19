@@ -17,24 +17,19 @@ class RenderSystem
 {
 public:
     explicit RenderSystem() = default;
-    void update(Scene& scene, const CameraData& camera, RenderQueue& queue, const bool is_editor_mode)
+    void update(Scene& scene, const CameraData& camera, RenderQueue& queue)
     {
         // Set the matrix given by the main camera of the scene
         glm::mat4 view, projection;
 
-        if (is_editor_mode)
-        {
-            view = camera.view;
-            projection = camera.projection;
-        }else
-        {
-            // Get the main camera into the scene
-
-        }
+        // Get the view and projection matrix from the camera data
+        view = camera.view;
+        projection = camera.projection;
 
         auto& registry = scene.get_registry();
         auto& resource_manager = scene.get_resource_manager();
 
+        // Iterate over each entity with a TransformComponent and a ModelComponent
         registry.view<TransformComponent, ModelComponent>(
             [&](entt::entity e,TransformComponent& transform, ModelComponent& modelComp)
             {
