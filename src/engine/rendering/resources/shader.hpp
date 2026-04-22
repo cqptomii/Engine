@@ -18,11 +18,8 @@ class Shader
 
     std::unordered_map<uint32_t, GLint> uniform_locations;
 public:
-    explicit Shader(const ShaderResource& shader_resource) : program_id(0)
+    explicit Shader(const char* vertex_shader_str, const char* fragment_shader_str,) : program_id(0)
     {
-        const char* vertex_shader_str = shader_resource.get_vertex_source().c_str();
-        const char* fragment_shader_str = shader_resource.get_fragment_source().c_str();
-
         int success;
         char infoLog[512];
 
