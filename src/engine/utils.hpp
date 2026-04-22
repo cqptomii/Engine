@@ -7,75 +7,75 @@
 #include <iostream>
 #include <glad/glad.h>
 #include <vector>
+#include <filesystem>
+#include <string>
+#include <array>
+#include <algorithm>
+#include <cctype>
 
 inline uint32_t hash_string(const std::string& str)
 {
     return std::hash<std::string>{}(str);
 }
-
-template<typename T>
-unsigned int makeVBO(const std::vector<T>& data, unsigned int vbo_types, GLenum usage)
+inline std::string normalize_resource_path_minimal(const std::string& path)
 {
-    unsigned int vbo;
-
-    // Create the Vertex buffer object
-    glGenBuffers(1, &vbo);
-    glBindBuffer(vbo_types, vbo);
-
-    // Copy the data into the buffer
-    glBufferData(vbo_types, data.size() * sizeof(T), data.data(), usage);
-    glBindBuffer(vbo_types, 0);
-
-    return vbo;
-}
-
-inline unsigned int makeShaderProgram(const char* vertex_source, const char* fragment_source)
-{
-    int succes;
-    char infoLog[512];
-
-    unsigned int vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertex_shader, 1, &vertex_source, nullptr);
-    glCompileShader(vertex_shader);
-    glGetShaderiv(GL_VERTEX_SHADER, GL_COMPILE_STATUS, &succes);
-    if (!succes)
+    if (path.empty())
     {
-        glGetShaderInfoLog(GL_VERTEX_SHADER, 512, nullptr, infoLog);
-        std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+        return path;
     }
 
-    unsigned int fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragment_shader, 1, &fragment_source, nullptr);
-    glCompileShader(fragment_shader);
+    std::filesystem::path fs_path(path);
+    std::string normalized = fs_path.lexically_normal().generic_string();
 
-    glGetShaderiv(GL_FRAGMENT_SHADER, GL_COMPILE_STATUS, &succes);
-    if (!succes)
-    {
-        glGetShaderInfoLog(GL_VERTEX_SHADER, 512, nullptr, infoLog);
-        std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
-    }
-
-    unsigned int program = glCreateProgram();
-    glAttachShader(program, vertex_shader);
-    glAttachShader(program, fragment_shader);
-
-    glLinkProgram(program);
-    glGetProgramiv(program, GL_LINK_STATUS, &succes);
-    if (!succes)
-    {
-        glGetProgramInfoLog(program, 512, nullptr, infoLog);
-        std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
-    }
-
-    glDeleteShader(vertex_shader);
-    glDeleteShader(fragment_shader);
-
-
-    return program;
-}
-
-
+#ifdef _WIN32
+    std::transform(normalized.begin(), normalized.end(), normalized.begin(),
+        [](const unsigned char c)
+        {
+            return static_cast<char>(std::tolower(c));
+        });
 #endif
+
+    while (normalized.size() > 1 && normalized.back() == '/')
+    {
+        normalized.pop_back();
+    }
+
+    return normalized;
+}
+inline std::string resolve_shader_path(const std::string& relative_path)
+{
+    if (std::filesystem::exists(relative_path))
+    {
+        return relative_path;
+    }
+
+    const std::array<std::string, 4> candidates = {
+        "../" + relative_path,
+        "../../" + relative_path,
+        "../../../" + relative_path,
+        "../../../../" + relative_path
+    };
+
+    for (const auto& candidate : candidates)
+    {
+        if (std::filesystem::exists(candidate))
+        {
+            return candidate;
+        }
+    }
+
+    return relative_path;
+}
+inline void convert_hex_to_rgba(const unsigned int hex_color, float& r, float& g, float& b, float& a)
+{
+    r = static_cast<float>((hex_color >> 16) & 0xFF) / 255.0f;
+    g = static_cast<float>((hex_color >> 8) & 0xFF) / 255.0f;
+    b = static_cast<float>(hex_color & 0xFF) / 255.0f;
+    a = 1.0f;
+}
+
+
+#endif // UTILS_H
 
 
 

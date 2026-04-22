@@ -14,6 +14,7 @@
 #include "engine/resources/material/material_instance.hpp"
 #include "engine/resources/model/model_resource.hpp"
 #include "engine/resources/mesh_resource.hpp"
+#include "engine/utils.hpp"
 
 class ResourceManager
 {
@@ -25,34 +26,38 @@ class ResourceManager
     std::unordered_map<uint32_t, std::unique_ptr<TextureResource>> texture_cache;
     std::unordered_map<uint32_t, std::unique_ptr<ShaderResource>> shader_cache;
 
-    uint32_t next_model_id = 0;
-    uint32_t next_material_id = 0;
     uint32_t next_material_instance_id = 0;
-    uint32_t next_mesh_id = 0;
-    uint32_t next_texture_id = 0;
-    uint32_t next_shader_id = 0;
 public:
     ResourceManager() = default;
     ~ResourceManager() = default;
 
     // Model
     ResourceHandle<ModelResource> load_model(const std::string& path){
-        uint32_t id = next_model_id++;
-        this->model_cache.emplace(id, std::make_unique<ModelResource>(path, *this));
+        uint32_t id = hash_string(
+            normalize_resource_path_minimal(path)
+        );
+        if (this->model_cache.find(id) == this->model_cache.end())
+        {
+            this->model_cache.emplace(id, std::make_unique<ModelResource>(path, *this));
+        }
         return ResourceHandle<ModelResource>(id);
     }
-
     ModelResource& get_model(const ResourceHandle<ModelResource> handle)
     {
         return *this->model_cache.at(handle.id);
     }
 
-
     // Mesh
-    ResourceHandle<MeshResource> load_mesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices)
+    ResourceHandle<MeshResource> load_mesh(const std::string& path, const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices)
     {
-        uint32_t id = next_mesh_id++;
-        this->mesh_cache.emplace(id, std::make_unique<MeshResource>(vertices, indices));
+        uint32_t id = hash_string(
+            normalize_resource_path_minimal(path)
+        );
+        if( this->mesh_cache.find(id) == this->mesh_cache.end())
+        {
+             this->mesh_cache.emplace(id, std::make_unique<MeshResource>(vertices, indices));
+        
+        }
         return ResourceHandle<MeshResource>(id);
     }
     MeshResource& get_mesh(const ResourceHandle<MeshResource> handle)
@@ -61,23 +66,28 @@ public:
     }
 
     // Material
-    ResourceHandle<MaterialResource> load_material_resource(const char* vertex_shader_path, const char* fragment_shader_path, const std::vector<std::string> texture_paths)
+    ResourceHandle<MaterialResource> load_material_resource(const std::string& path, const char* vertex_shader_path, const char* fragment_shader_path, const std::vector<std::string> texture_paths)
     {
-        uint32_t id = next_material_id++;
+        uint32_t id = hash_string(
+            normalize_resource_path_minimal(path)
+        );
 
-        // Load the shader associated with the material
-        const ResourceHandle<ShaderResource> mat_shader = this->load_shader(vertex_shader_path, fragment_shader_path);
-        // Load the textures associated with the material
-        std::unordered_map<std::string, ResourceHandle<TextureResource>> textures;
-        uint32_t texture_index = 0;
-        for (const auto& path : texture_paths)
+        if (this->material_cache.find(id) == this->material_cache.end())
         {
-            textures.emplace("texture_" + std::to_string(texture_index++), this->load_texture(path));
+
+            // Load the shader associated with the material
+            const ResourceHandle<ShaderResource> mat_shader = this->load_shader(vertex_shader_path, fragment_shader_path);
+            // Load the textures associated with the material
+            std::unordered_map<std::string, ResourceHandle<TextureResource>> textures;
+            uint32_t texture_index = 0;
+            for (const auto& path : texture_paths)
+            {
+                textures.emplace("texture_" + std::to_string(texture_index++), this->load_texture(path));
+            }
+
+            // Add the material in the cache
+            this->material_cache.emplace(id, std::make_unique<MaterialResource>(mat_shader, textures));
         }
-
-        // Add the material in the cache
-        this->material_cache.emplace(id, std::make_unique<MaterialResource>(mat_shader, textures));
-
         return ResourceHandle<MaterialResource>(id);
     }
     MaterialResource& get_material_resource(const ResourceHandle<MaterialResource> handle)
@@ -98,10 +108,14 @@ public:
     // Texture
     ResourceHandle<TextureResource> load_texture(const char* path)
     {
-        uint32_t id = next_texture_id++;
-        // Load the texture from path
-        this->texture_cache.emplace(id, std::make_unique<TextureResource>(path));
-
+        uint32_t id = hash_string(
+            normalize_resource_path_minimal(path)
+        );
+        if (this->texture_cache.find(id) == this->texture_cache.end())
+        {
+            // Load the texture from path
+            this->texture_cache.emplace(id, std::make_unique<TextureResource>(path));
+        }
         return ResourceHandle<TextureResource>(id);
     }
     ResourceHandle<TextureResource> load_texture(const std::string& path)
@@ -114,16 +128,20 @@ public:
     }
     
     // Shader
-    ResourceHandle<ShaderResource> load_shader(const char* vertex_path, const char* fragment_path)
+    ResourceHandle<ShaderResource> load_shader(const std::string& path, const char* vertex_path, const char* fragment_path)
     {
-        uint32_t id = next_shader_id++;
-        this->shader_cache.emplace(id, std::make_unique<ShaderResource>(vertex_path, fragment_path));
-
+        uint32_t id = hash_string(
+            normalize_resource_path_minimal(path)
+        );
+        if (this->shader_cache.find(id) == this->shader_cache.end())
+        {
+            this->shader_cache.emplace(id, std::make_unique<ShaderResource>(vertex_path, fragment_path));
+        }
         return ResourceHandle<ShaderResource>(id);
     }
-    ResourceHandle<ShaderResource> load_shader(const std::string& vertex_path, const std::string& fragment_path)
+    ResourceHandle<ShaderResource> load_shader(const std::string& path, const std::string& vertex_path, const std::string& fragment_path)
     {
-        return this->load_shader(vertex_path.c_str(), fragment_path.c_str());
+        return this->load_shader(path, vertex_path.c_str(), fragment_path.c_str());
     }
     ShaderResource& get_shader(const ResourceHandle<ShaderResource> handle)
     {
