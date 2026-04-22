@@ -10,15 +10,14 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <string>
 #include <iostream>
-#include "../src/engine/resources/shader_resource.hpp"
 
 class Shader
 {
     unsigned int program_id;
 
-    std::unordered_map<uint32_t, GLint> uniform_locations;
+    std::unordered_map<std::string, GLint> uniform_locations;
 public:
-    explicit Shader(const char* vertex_shader_str, const char* fragment_shader_str,) : program_id(0)
+    explicit Shader(const char* vertex_shader_str, const char* fragment_shader_str) : program_id(0)
     {
         int success;
         char infoLog[512];
@@ -71,6 +70,13 @@ public:
         }
     }
 
+    Shader(const Shader&) = delete;
+    Shader& operator=(const Shader&) = delete;
+    Shader(Shader&& other) noexcept : program_id(other.program_id), uniform_locations(std::move(other.uniform_locations))
+    {
+        other.program_id = 0;
+    }
+
     // Use the shader
     void use() const
     {
@@ -81,76 +87,83 @@ public:
         glUseProgram(0);
     }
 
-    void cache_uniform(const std::string& name)
+    // Uniform caching and retrieval
+    GLint get_location(const std::string& name) const
     {
-        uint32_t id = hash_string(name);
-        GLint location = glGetUniformLocation(program_id, name.c_str());
-
-        if (location != -1)
-            uniform_locations[id] = location;
-    }
-    GLint get_location(uint32_t id)
-    {
-        auto it = uniform_locations.find(id);
-
+        auto it = uniform_locations.find(name);
         if (it != uniform_locations.end())
             return it->second;
 
-        return -1;
+        GLint loc = glGetUniformLocation(program_id, name.c_str());
+        uniform_locations[name] = loc;
+        return loc;
     }
+
+    // UBO Binding
+    void bind_ubo(const std::string& block_name, GLuint binding_point) const
+    {
+        GLuint block_index = glGetUniformBlockIndex(program_id, block_name.c_str());
+        if (block_index != GL_INVALID_INDEX)
+        {
+            glUniformBlockBinding(program_id, block_index, binding_point);
+        }
+        else
+        {
+            std::cout << "WARNING::SHADER::UBO_BLOCK_NOT_FOUND: " << block_name << std::endl;
+        }
+    }
+
 
     // Bind Uniform value into the shader
     void set_bool(const std::string& name, bool value) const
     {
-        glUniform1i(glGetUniformLocation(this->program_id, name.c_str()), (int)value);
+        glUniform1i(get_location(name), (int)value);
     }
     void set_int(const std::string& name, int value) const
     {
-        glUniform1i(glGetUniformLocation(this->program_id, name.c_str()), value);
+        glUniform1i(get_location(name), value);
     }
     void set_float(const std::string& name, float value) const
     {
-        glUniform1f(glGetUniformLocation(this->program_id, name.c_str()), value);
+        glUniform1f(get_location(name), value);
     }
 
     void set_vec2(const std::string& name, const glm::vec2& value) const
     {
-        glUniform2fv(glGetUniformLocation(this->program_id, name.c_str()), 1, glm::value_ptr(value));
+        glUniform2fv(get_location(name), 1, glm::value_ptr(value));
     }
     void set_vec2(const std::string& name, float x, float y) const
     {
-        glUniform2f(glGetUniformLocation(this->program_id, name.c_str()), x, y);
+        glUniform2f(get_location(name), x, y);
     }
-
     void set_vec3(const std::string& name, const glm::vec3& value) const
     {
-        glUniform3fv(glGetUniformLocation(this->program_id, name.c_str()), 1, glm::value_ptr(value));
+        glUniform3fv(get_location(name), 1, glm::value_ptr(value));
     }
     void set_vec3(const std::string& name, float x, float y, float z) const
     {
-        glUniform3f(glGetUniformLocation(this->program_id, name.c_str()), x, y, z);
+        glUniform3f(get_location(name), x, y, z);
     }
-
     void set_vec4(const std::string& name, const glm::vec4& value) const
     {
-        glUniform4fv(glGetUniformLocation(this->program_id, name.c_str()), 1, glm::value_ptr(value));
+        glUniform4fv(get_location(name), 1, glm::value_ptr(value));
     }
     void set_vec4(const std::string& name, float x, float y, float z, float w) const
     {
-        glUniform4f(glGetUniformLocation(this->program_id, name.c_str()), x, y, z, w);
+        glUniform4f(get_location(name), x, y, z, w);
     }
 
     void set_mat2(const std::string& name, const glm::mat2& matrix) const
     {
-        glUniformMatrix2fv(glGetUniformLocation(this->program_id, name.c_str()), 1, GL_FALSE, glm::value_ptr(matrix));
+        glUniformMatrix2fv(get_location(name), 1, GL_FALSE, glm::value_ptr(matrix));
     }
     void set_mat3(const std::string& name, const glm::mat3& matrix) const
     {
-        glUniformMatrix3fv(glGetUniformLocation(this->program_id, name.c_str()), 1, GL_FALSE, glm::value_ptr(matrix));
+        glUniformMatrix3fv(get_location(name), 1, GL_FALSE, glm::value_ptr(matrix));
     }
     void set_mat4(const std::string& name, const glm::mat4& matrix) const
     {
-        glUniformMatrix4fv(glGetUniformLocation(this->program_id, name.c_str()), 1, GL_FALSE, glm::value_ptr(matrix));
+        glUniformMatrix4fv(get_location(name), 1, GL_FALSE, glm::value_ptr(matrix));
     }
 };
 
