@@ -27,13 +27,13 @@ public:
         if (id != 0) glDeleteBuffers(1, &id);
     }
 
-    void setData(size_t size, const void* data, GLenum usage) {
+    void set_data(size_t size, const void* data, GLenum usage) {
         glBindBuffer(target, id);
         glBufferData(target, size, data, usage);
         this->size = size;
     }
 
-    void updateData(size_t offset, size_t size, const void* data) {
+    void update_data(size_t offset, size_t size, const void* data) {
         if (offset + size > this->size) return;
 
         glBindBuffer(target, id);
@@ -48,7 +48,7 @@ public:
         glBindBuffer(target, 0);
     }
 
-    void bindBase(GLuint binding) const {
+    void bind_base(GLuint binding) const {
         glBindBufferBase(target, binding, id);
     }
 
