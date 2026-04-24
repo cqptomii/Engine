@@ -8,10 +8,10 @@
 #include <vector>
 #include "engine/core/wrapper/Buffer.hpp"
 #include "engine/core/wrapper/VAO.hpp"
-#include "TransformData.hpp"
-#include "engine/rendering/shader.hpp"
-#include "engine/resources/shader_resource.hpp"
-#include "engine/rendering/camera_data.hpp"
+#include "engine/rendering/utils/transform_data.hpp"
+#include "engine/resources/gpu/shader.hpp"
+#include "engine/resources/cpu/shader_resource.hpp"
+#include "engine/rendering/utils/camera_data.hpp"
 #include "engine/utils.hpp"
 
 class GizmoRenderer {
@@ -43,7 +43,7 @@ private:
         // Set up the VAO and VBO for the axes
         gizmo_vao.bind();
         gizmo_vbo.bind();
-        gizmo_vbo.setData(sizeof(axis_vertices), axis_vertices.data(), GL_STATIC_DRAW);
+        gizmo_vbo.set_data(sizeof(axis_vertices), axis_vertices.data(), GL_STATIC_DRAW);
 
         // Link the vertices position and color attributes to the vertex shader inputs locations
         gizmo_vao.set_vertex_attrib_pointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)nullptr);
@@ -55,7 +55,7 @@ private:
     void load_gizmo_ssbo(const std::vector<TransformData>& gizmo_transforms){
         ssbo_capacity_bytes = gizmo_transforms.size() * sizeof(TransformData);
         gizmo_ssbo.bind();
-        gizmo_ssbo.setData(gizmo_transforms.size() * sizeof(TransformData), gizmo_transforms.data(), GL_DYNAMIC_DRAW);
+        gizmo_ssbo.set_data(gizmo_transforms.size() * sizeof(TransformData), gizmo_transforms.data(), GL_DYNAMIC_DRAW);
         gizmo_ssbo.unbind();
     }
 
@@ -91,11 +91,14 @@ public:
         }
 
         // Update the SSBO with the new gizmo transform data
-        this->gizmo_ssbo.updateData(0, required_bytes, this->gizmo_transforms.data());
+        this->gizmo_ssbo.update_data(0, required_bytes, this->gizmo_transforms.data());
     }
     void render(const CameraData& camera_data){
         static ShaderResource axes_shader_resource(axes_vs_path.c_str(), axes_fs_path.c_str());
-        static Shader axes_shader(axes_shader_resource);
+        static Shader axes_shader(
+            axes_shader_resource.get_vertex_source().c_str(),
+            axes_shader_resource.get_fragment_source().c_str()
+        );
 
         // Set up the configuration of the OpenGL state to render the gizmo axes, and restore it at the end of the function
         const GLboolean was_depth_test = glIsEnabled(GL_DEPTH_TEST);
@@ -131,7 +134,7 @@ public:
 
         // Bind the gizmo VAO and SSBO, and set the camera data uniform
         gizmo_vao.bind();
-        gizmo_ssbo.bindBase(0);
+        gizmo_ssbo.bind_base(0);
         glDrawArraysInstanced(GL_LINES, 0, 6, static_cast<GLsizei>(gizmo_transforms.size()));
         gizmo_vao.unbind();
 

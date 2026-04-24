@@ -3,9 +3,9 @@
 
 #include "engine/core/wrapper/Buffer.hpp"
 #include "engine/core/wrapper/VAO.hpp"
-#include "engine/rendering/shader.hpp"
-#include "engine/resources/shader_resource.hpp"
-#include "engine/rendering/camera_data.hpp"
+#include "engine/resources/gpu/shader.hpp"
+#include "engine/resources/cpu/shader_resource.hpp"
+#include "engine/rendering/utils/camera_data.hpp"
 #include "engine/utils.hpp"
 
 
@@ -33,7 +33,7 @@ private:
         grid_vao.bind();
         grid_vbo.bind();
 
-        grid_vbo.setData(sizeof(quad_vertices), quad_vertices.data(), GL_STATIC_DRAW);
+        grid_vbo.set_data(sizeof(quad_vertices), quad_vertices.data(), GL_STATIC_DRAW);
 
         // Link the vertices position to the vertex shader input location
         grid_vao.set_vertex_attrib_pointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
@@ -49,7 +49,10 @@ public:
 
     void render(const CameraData& camera_data){
         static ShaderResource grid_shader_resource(grid_vs_path.c_str(), grid_fs_path.c_str());
-        static Shader grid_shader(grid_shader_resource);
+        static Shader grid_shader(
+            grid_shader_resource.get_vertex_source().c_str(),
+            grid_shader_resource.get_fragment_source().c_str()
+        );
 
         const GLboolean was_depth_test = glIsEnabled(GL_DEPTH_TEST);
         const GLboolean was_cull_face = glIsEnabled(GL_CULL_FACE);
