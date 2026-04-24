@@ -11,33 +11,28 @@
 
 #include "engine/core/wrapper/VAO.hpp"
 #include "engine/core/wrapper/Buffer.hpp"
+#include "engine/resources/cpu/mesh_resource.hpp"
 
 class Mesh
 {  
     // VAO
     VAO vao;
     // VBO and EBO
-    Buffer vbo;
-    Buffer ebo;
+    Buffer vbo{GL_ARRAY_BUFFER};
+    Buffer ebo{GL_ELEMENT_ARRAY_BUFFER};
     int index_count = 0;
     
     void upload(const void* vertices, size_t vertex_count, const void* indices, size_t index_count, const GLenum usage = GL_STATIC_DRAW)
     {
-        // Create the VAO, VBO and EBO objects
-        this->vao = VAO();
-        THIS->vbo = Buffer(GL_ARRAY_BUFFER);
-        THIS->ebo = Buffer(GL_ELEMENT_ARRAY_BUFFER);
-
-
         // Update the amount of indices to draw on the viewport
-        this->index_count = static_cast<int>(indices.size());
+        this->index_count = static_cast<int>(index_count);
 
         // Bind the VAO
         this->vao.bind();
 
         // Fill the VBO and the EBO with the vertices and the indices data
-        this->vbo.setData(vertex_count * sizeof(Vertex), vertices, usage);
-        this->ebo.setData(index_count * sizeof(unsigned int), indices, usage);
+        this->vbo.set_data(vertex_count * sizeof(Vertex), vertices, usage);
+        this->ebo.set_data(index_count * sizeof(unsigned int), indices, usage);
         
         // Link vertex position/color/normal/uv attributes from Vertex layout.
         this->vao.set_vertex_attrib_pointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void*>(offsetof(Vertex, vertice)));

@@ -8,6 +8,7 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <unordered_map>
 #include <string>
 #include <iostream>
 
@@ -15,7 +16,7 @@ class Shader
 {
     unsigned int program_id;
 
-    std::unordered_map<std::string, GLint> uniform_locations;
+    mutable std::unordered_map<std::string, GLint> uniform_locations;
 public:
     explicit Shader(const char* vertex_shader_str, const char* fragment_shader_str) : program_id(0)
     {

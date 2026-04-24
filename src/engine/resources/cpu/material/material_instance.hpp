@@ -5,8 +5,8 @@
 #ifndef ENGINE_MATERIAL_INSTANCE_HPP
 #define ENGINE_MATERIAL_INSTANCE_HPP
 
-#include "../src/engine/resources/material/material_resource.hpp"
-#include "../src/engine/resources/resource_handle.hpp"
+#include "engine/resources/cpu/material/material_resource.hpp"
+#include "engine/resources/cpu/resource_handle.hpp"
 #include <unordered_map>
 
 class MaterialInstance

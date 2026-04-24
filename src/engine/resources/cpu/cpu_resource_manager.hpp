@@ -8,15 +8,16 @@
 #include <string>
 #include <unordered_map>
 #include <memory>
-#include "engine/resources/resource_handle.hpp"
-#include "engine/resources/shader_resource.hpp"
-#include "engine/resources/material/material_resource.hpp"
-#include "engine/resources/material/material_instance.hpp"
-#include "engine/resources/model/model_resource.hpp"
-#include "engine/resources/mesh_resource.hpp"
+#include <stdexcept>
+#include "engine/resources/cpu/resource_handle.hpp"
+#include "engine/resources/cpu/shader_resource.hpp"
+#include "engine/resources/cpu/material/material_resource.hpp"
+#include "engine/resources/cpu/material/material_instance.hpp"
+#include "engine/resources/cpu/model/model_resource.hpp"
+#include "engine/resources/cpu/mesh_resource.hpp"
 #include "engine/utils.hpp"
 
-class ResourceManager
+class CpuResourceManager
 {
     // Cache CPU
     std::unordered_map<uint32_t, std::unique_ptr<ModelResource>> model_cache;
@@ -27,9 +28,21 @@ class ResourceManager
     std::unordered_map<uint32_t, std::unique_ptr<ShaderResource>> shader_cache;
 
     uint32_t next_material_instance_id = 0;
+
+    // hashed path - id mapping
+    std::unordered_map<uint32_t, std::string> id_to_path_cache;
+
+    void throw_hash_collision(const std::string& path, const std::string& existing_path)
+    {
+        throw std::runtime_error("Hash collision detected for resource: \n" + path + "\n" + existing_path + "\nConsider renaming one of the resources to avoid the collision.");
+    }
+
 public:
-    ResourceManager() = default;
-    ~ResourceManager() = default;
+    CpuResourceManager() = default;
+    ~CpuResourceManager() = default;
+
+    CpuResourceManager(const CpuResourceManager&) = delete;
+    CpuResourceManager& operator=(const CpuResourceManager&) = delete;
 
     // Model
     ResourceHandle<ModelResource> load_model(const std::string& path){
@@ -56,7 +69,14 @@ public:
         if( this->mesh_cache.find(id) == this->mesh_cache.end())
         {
              this->mesh_cache.emplace(id, std::make_unique<MeshResource>(vertices, indices));
-        
+             this->id_to_path_cache.emplace(id, path);
+        }else{
+            // Check for hash collision
+            const std::string& existing_path = this->id_to_path_cache.at(id);
+            if (existing_path != path)
+            {
+                this->throw_hash_collision(path, existing_path);
+            }
         }
         return ResourceHandle<MeshResource>(id);
     }
@@ -76,7 +96,8 @@ public:
         {
 
             // Load the shader associated with the material
-            const ResourceHandle<ShaderResource> mat_shader = this->load_shader(vertex_shader_path, fragment_shader_path);
+            const ResourceHandle<ShaderResource> mat_shader = this->load_shader(path + "::shader", vertex_shader_path, fragment_shader_path);
+            
             // Load the textures associated with the material
             std::unordered_map<std::string, ResourceHandle<TextureResource>> textures;
             uint32_t texture_index = 0;
@@ -87,6 +108,15 @@ public:
 
             // Add the material in the cache
             this->material_cache.emplace(id, std::make_unique<MaterialResource>(mat_shader, textures));
+            
+            this->id_to_path_cache.emplace(id, path);
+        }else{
+            // Check for hash collision
+            const std::string& existing_path = this->id_to_path_cache.at(id);
+            if (existing_path != path)
+            {
+                this->throw_hash_collision(path, existing_path);
+            }
         }
         return ResourceHandle<MaterialResource>(id);
     }
@@ -115,6 +145,15 @@ public:
         {
             // Load the texture from path
             this->texture_cache.emplace(id, std::make_unique<TextureResource>(path));
+
+            this->id_to_path_cache.emplace(id, path);
+        }else{
+            // Check for hash collision
+            const std::string& existing_path = this->id_to_path_cache.at(id);
+            if (existing_path != path)
+            {
+                this->throw_hash_collision(path, existing_path);
+            }
         }
         return ResourceHandle<TextureResource>(id);
     }
@@ -136,6 +175,14 @@ public:
         if (this->shader_cache.find(id) == this->shader_cache.end())
         {
             this->shader_cache.emplace(id, std::make_unique<ShaderResource>(vertex_path, fragment_path));
+            this->id_to_path_cache.emplace(id, path);
+        }else{
+            // Check for hash collision
+            const std::string& existing_path = this->id_to_path_cache.at(id);
+            if (existing_path != path)
+            {
+                this->throw_hash_collision(path, existing_path);
+            }
         }
         return ResourceHandle<ShaderResource>(id);
     }

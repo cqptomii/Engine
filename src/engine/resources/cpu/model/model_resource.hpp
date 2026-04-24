@@ -13,11 +13,11 @@
 #include <unordered_map>
 #include <vector>
 #include <string>
-#include "engine/resources/resource_handle.hpp"
-#include "engine/resources/mesh_resource.hpp"
-#include "engine/resources/material/material_instance.hpp"
+#include "engine/resources/cpu/resource_handle.hpp"
+#include "engine/resources/cpu/mesh_resource.hpp"
+#include "engine/resources/cpu/material/material_instance.hpp"
 
-class ResourceManager;
+class CpuResourceManager;
 
 struct ModelNode
 {
@@ -36,13 +36,13 @@ class ModelResource
 
     static glm::mat4 to_glm_matrix(const aiMatrix4x4& m);
 
-    void load_model(const std::string& path, ResourceManager& resource_manager);
-    int process_node(const aiNode* node, const aiScene* scene, ResourceManager& resource_manager);
-    int process_mesh(aiMesh* mesh, const aiScene* scene, ResourceManager& resource_manager);
+    void load_model(const std::string& path, CpuResourceManager& resource_manager);
+    int process_node(const aiNode* node, const aiScene* scene, CpuResourceManager& resource_manager);
+    int process_mesh(aiMesh* mesh, const aiScene* scene, CpuResourceManager& resource_manager);
     std::vector<std::string> load_texture_paths(const aiMaterial* mat, aiTextureType type) const;
 
 public:
-    explicit ModelResource(const std::string& path, ResourceManager& resource_manager);
+    explicit ModelResource(const std::string& path, CpuResourceManager& resource_manager);
     ~ModelResource() = default;
 
     const std::vector<ModelNode>& get_nodes() const { return this->nodes; }

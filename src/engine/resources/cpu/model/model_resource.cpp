@@ -2,11 +2,11 @@
 // Created by tomfr on 09/03/2026.
 //
 
-#include "engine/resources/model/model_resource.hpp"
+#include "engine/resources/cpu/model/model_resource.hpp"
 
 #include <iostream>
 
-#include "engine/resources/resource_manager.hpp"
+#include "engine/resources/cpu/cpu_resource_manager.hpp"
 
 glm::mat4 ModelResource::to_glm_matrix(const aiMatrix4x4& m)
 {
@@ -18,7 +18,7 @@ glm::mat4 ModelResource::to_glm_matrix(const aiMatrix4x4& m)
 	};
 }
 
-void ModelResource::load_model(const std::string& path, ResourceManager& resource_manager)
+void ModelResource::load_model(const std::string& path, CpuResourceManager& resource_manager)
 {
 	Assimp::Importer importer;
 	const aiScene* scene = importer.ReadFile(
@@ -41,7 +41,7 @@ void ModelResource::load_model(const std::string& path, ResourceManager& resourc
 	this->process_node(scene->mRootNode, scene, resource_manager);
 }
 
-int ModelResource::process_node(const aiNode* node, const aiScene* scene, ResourceManager& resource_manager)
+int ModelResource::process_node(const aiNode* node, const aiScene* scene, CpuResourceManager& resource_manager)
 {
 	ModelNode model_node;
 	model_node.local_transform = to_glm_matrix(node->mTransformation);
@@ -65,7 +65,7 @@ int ModelResource::process_node(const aiNode* node, const aiScene* scene, Resour
 	return node_index;
 }
 
-int ModelResource::process_mesh(aiMesh* mesh, const aiScene* scene, ResourceManager& resource_manager)
+int ModelResource::process_mesh(aiMesh* mesh, const aiScene* scene, CpuResourceManager& resource_manager)
 {
 	std::vector<Vertex> vertices;
 	std::vector<unsigned int> indices;
@@ -120,8 +120,9 @@ int ModelResource::process_mesh(aiMesh* mesh, const aiScene* scene, ResourceMana
 	}
 
 	const int mesh_index = static_cast<int>(this->meshes.size());
+	const std::string mesh_cache_key = this->directory.generic_string() + "/__mesh_" + std::to_string(mesh_index);
 
-	ResourceHandle<MeshResource> mesh_handle = resource_manager.load_mesh(vertices, indices);
+	ResourceHandle<MeshResource> mesh_handle = resource_manager.load_mesh(mesh_cache_key, vertices, indices);
 	MeshResource& mesh_resource = resource_manager.get_mesh(mesh_handle);
 	SubMesh submesh{};
 	submesh.index_offset = 0;
@@ -134,11 +135,13 @@ int ModelResource::process_mesh(aiMesh* mesh, const aiScene* scene, ResourceMana
 
 		if (!this->material_instances_by_index.contains(material_index))
 		{
+			const std::string material_cache_key = this->directory.generic_string() + "/__material_" + std::to_string(material_index);
 			auto diffuse_paths = load_texture_paths(mat, aiTextureType_DIFFUSE);
 			auto normal_paths = load_texture_paths(mat, aiTextureType_NORMALS);
 			diffuse_paths.insert(diffuse_paths.end(), normal_paths.begin(), normal_paths.end());
 
 			const auto material_resource = resource_manager.load_material_resource(
+				material_cache_key,
 				"sources/shader/base.vs",
 				"sources/shader/base.fs",
 				diffuse_paths
@@ -176,7 +179,7 @@ std::vector<std::string> ModelResource::load_texture_paths(const aiMaterial* mat
 	return textures;
 }
 
-ModelResource::ModelResource(const std::string& path, ResourceManager& resource_manager)
+ModelResource::ModelResource(const std::string& path, CpuResourceManager& resource_manager)
 {
 	this->load_model(path, resource_manager);
 }

@@ -7,8 +7,8 @@
 
 #include <glm/glm.hpp>
 #include <vector>
-#include "../src/engine/resources/resource_handle.hpp"
-#include "../src/engine/resources/material/material_instance.hpp"
+#include "engine/resources/cpu/resource_handle.hpp"
+#include "engine/resources/cpu/material/material_instance.hpp"
 
 struct Vertex
 {

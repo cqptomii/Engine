@@ -50,9 +50,6 @@ class Texture
 public:
     explicit Texture(const unsigned char* data, const int width, const int height, const int nrChannels,  const GLenum texture_target = GL_TEXTURE_2D, const GLint texture_wrap_s = GL_REPEAT, const GLint texture_wrap_t = GL_REPEAT, const GLint texture_min_filter = GL_LINEAR, const GLint texture_mag_filter = GL_LINEAR) : texture_target(texture_target), texture_wrap_s(texture_wrap_s), texture_wrap_t(texture_wrap_t), texture_min_filter(texture_min_filter), texture_mag_filter(texture_mag_filter)
     {
-
-        this->texture_buffer = TextureBuffer();
-
         // Initialize the texture options/ parameters
         this->initialize_texture(
             data,
@@ -78,11 +75,11 @@ public:
     void bind(const GLenum texture_slot = 0) const
     {
         glActiveTexture(GL_TEXTURE0 + texture_slot);
-        glBindTexture(this->texture_target, this->texture_id);
+        this->texture_buffer.bind();
     }
     void unbind() const
     {
-        glBindTexture(this->texture_target, 0);
+        this->texture_buffer.unbind();
     }
 };
 
