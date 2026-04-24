@@ -13,17 +13,23 @@
 #include <unordered_map>
 #include <vector>
 #include <glm/gtc/matrix_transform.hpp>
-#include  "mesh.hpp"
-#include "render_queue.hpp"
-#include "shader.hpp"
-#include "texture.hpp"
+
+#include "engine/rendering/render_queue.hpp"
+#include "engine/rendering/utils/ubo_types.hpp"
+#include "engine/rendering/utils/camera_data.hpp"
+#include "engine/rendering/utils/transform_data.hpp"
+#include "engine/rendering/gizmo_renderer.hpp"
+#include "engine/rendering/grid_renderer.hpp"
+
 #include "engine/core/wrapper/Buffer.hpp"
-#include "ubo_types.hpp"
-#include "camera_data.hpp"
-#include "../resources/material/material_resource.hpp"
-#include "GizmoRenderer.hpp"
-#include "GridRenderer.hpp"
-#include "TransformData.hpp"
+
+#include "engine/resources/cpu/material/material_resource.hpp"
+#include "engine/resources/cpu/cpu_resource_manager.hpp"
+#include "engine/resources/gpu/mesh.hpp"
+#include "engine/resources/gpu/shader.hpp"
+#include "engine/resources/gpu/texture.hpp"
+#include "engine/resources/gpu/gpu_resource_manager.hpp"
+
 
 template<typename>
 struct always_false : std::false_type {};
@@ -31,90 +37,33 @@ struct always_false : std::false_type {};
 class Renderer
 {
     
-    std::unordered_map<MeshResource*, Mesh*> mesh_cache;
-    std::unordered_map<TextureResource*, Texture*> texture_cache;
-    std::unordered_map<ShaderResource*, Shader*> shader_cache;
-
-    // UBO related to the Camera data
-    std::unique_ptr<Buffer> camera_ubo;
-    std::unique_ptr<Buffer> object_ubo;
-    std::unique_ptr<Buffer> material_ubo;
+    // GPU Resource Manager
+    std::unique_ptr<GPUResourceManager> gpu_resource_manager;
 
     // Rendering related classes related to the editor gizmo and the editor grid
     std::unique_ptr<GizmoRenderer> gizmo_renderer;
     std::unique_ptr<GridRenderer> grid_renderer;
 
-    void ensure_gpu_buffers_initialized()
-    {
-        if (!this->camera_ubo)
-        {
-            this->camera_ubo = std::make_unique<Buffer>(GL_UNIFORM_BUFFER);
-            this->camera_ubo->setData(sizeof(CameraUBO), nullptr, GL_DYNAMIC_DRAW);
-        }
-        if (!this->object_ubo)
-        {
-            this->object_ubo = std::make_unique<Buffer>(GL_UNIFORM_BUFFER);
-            this->object_ubo->setData(sizeof(ObjectUBO), nullptr, GL_DYNAMIC_DRAW);
-        }
-        if (!this->material_ubo)
-        {
-            this->material_ubo = std::make_unique<Buffer>(GL_UNIFORM_BUFFER);
-            this->material_ubo->setData(sizeof(MaterialUBO), nullptr, GL_DYNAMIC_DRAW);
-        }
-    }
-
 public:
 
-    Renderer() = default;
+    Renderer(){
+        this->gpu_resource_manager = std::make_unique<GPUResourceManager>();
+    };
     ~Renderer() = default;
 
-    Mesh* get_mesh(MeshResource& mesh_resource)
+    Renderer(const Renderer&) = delete;
+    Renderer& operator=(const Renderer&) = delete;
+
+    void execute(RenderQueue& queue, CpuResourceManager& resource_manager)
     {
-        if (!this->mesh_cache.contains(&mesh_resource))
-        {
-            const auto mesh = new Mesh(mesh_resource);
-            this->mesh_cache[&mesh_resource] = mesh;
-            return mesh;
-        }
-
-        return this->mesh_cache[&mesh_resource];
-    }
-    Texture* get_texture(TextureResource& texture_resource)
-    {
-        if (!this->texture_cache.contains(&texture_resource))
-        {
-            const auto texture = new Texture(texture_resource);
-            this->texture_cache[&texture_resource] = texture;
-            return texture;
-        }
-
-        return this->texture_cache[&texture_resource];
-    }
-    Shader* get_shader(ShaderResource& shader_resource)
-    {
-        if (!this->shader_cache.contains(&shader_resource))
-        {
-            const auto shader = new Shader(shader_resource);
-            this->shader_cache[&shader_resource] = shader;
-            return shader;
-        }
-
-        return this->shader_cache[&shader_resource];
-    }
-
-    void execute(RenderQueue& queue, ResourceManager& resource_manager)
-    {
-        this->ensure_gpu_buffers_initialized();
-
         for (auto& cmd : queue.get_commands())
         {
-            if (cmd.mesh == nullptr || cmd.material == nullptr)
+            if (!cmd.mesh_handle || cmd.mesh == nullptr || cmd.material == nullptr)
             {
                 continue;
             }
 
-            Mesh* mesh = this->get_mesh(*cmd.mesh);
-
+            Mesh* mesh = this->gpu_resource_manager->get_mesh(cmd.mesh_handle, *cmd.mesh);
 
             // Load the Material
             MaterialInstance* material_instance = cmd.material;
@@ -122,15 +71,15 @@ public:
 
             // Load the given shader
             ShaderResource&  shader_resource= resource_manager.get_shader(material_resource.get_shader());
-            Shader* shader = this->get_shader(shader_resource);
-
+            Shader* shader = this->gpu_resource_manager->get_shader(material_resource.get_shader(), shader_resource);
+            
             // Update Shader Uniform related to the Camera Transformation
             const CameraUBO cam_data{cmd.view, cmd.projection};
-            this->camera_ubo->updateData(0, sizeof(CameraUBO), &cam_data);
+            this->gpu_resource_manager->set_camera_ubo_data(&cam_data, sizeof(CameraUBO));
            
             // Update Shader Uniform related to the Model Transformation
             const ObjectUBO model_data{cmd.transform};
-            this->object_ubo->updateData(0, sizeof(ObjectUBO), &model_data);
+            this->gpu_resource_manager->set_object_ubo_data(&model_data, sizeof(ObjectUBO));
 
             // Get each parameter of the material to update
             auto parameters = material_resource.get_parameters();
@@ -164,7 +113,7 @@ public:
             mesh->draw();
         }
     }
-    void apply_parameter(Shader& shader, const MaterialParameter& parameter,int texture_slot, ResourceManager& resource_manager)
+    void apply_parameter(Shader& shader, const MaterialParameter& parameter,int texture_slot, CpuResourceManager& resource_manager)
     {
 
         std::visit([&](auto&& value)
@@ -173,7 +122,8 @@ public:
 
             if constexpr (std::is_same_v<T, ResourceHandle<TextureResource>>)
             {
-                const Texture* texture = this->get_texture(resource_manager.get_texture(value));
+                const Texture* texture = this->gpu_resource_manager->get_texture(value, resource_manager.get_texture(value));
+                
                 texture->bind(texture_slot);
             }
             else if constexpr (std::is_same_v<T, float>)
@@ -209,7 +159,7 @@ public:
 
     }
 
-    void render(const CameraData& camera_data, RenderQueue& queue, ResourceManager& resource_manager, bool render_editor_elements = false)
+    void render(const CameraData& camera_data, RenderQueue& queue, CpuResourceManager& resource_manager, bool render_editor_elements = false)
     {
         // Render the scene onto the screen
         this->execute(queue, resource_manager);

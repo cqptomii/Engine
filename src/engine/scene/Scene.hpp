@@ -6,28 +6,25 @@
 #define ENGINE_SCENE_HPP
 
 #include <glm/glm.hpp>
-#include <../src/engine/resources/resource_manager.hpp>
-#include <../src/engine/ecs/registry.hpp>
+#include "engine/resources/cpu/cpu_resource_manager.hpp"
+#include "engine/ecs/registry.hpp"
 
 class Scene{
 
     // Resource Manager class which load each resource to use
-    ResourceManager& resource_manager;
+    CpuResourceManager& resource_manager;
 
     // ECS System which contains each object in the scene
     Registry registry;
 
-
-    // Light sources
-    // Cameras
 public:
-    explicit Scene(ResourceManager& resource_manager) : resource_manager(resource_manager){}
+    explicit Scene(CpuResourceManager& resource_manager) : resource_manager(resource_manager){}
 
     Registry& get_registry()
     {
         return this->registry;
     }
-    ResourceManager& get_resource_manager() const
+    CpuResourceManager& get_resource_manager() const
     {
         return this->resource_manager;
     }

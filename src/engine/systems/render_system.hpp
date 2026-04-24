@@ -6,7 +6,7 @@
 #define ENGINE_RENDER_SYSTEM_HPP
 
 #include "engine/scene/Scene.hpp"
-#include "engine/rendering/camera_data.hpp"
+#include "engine/rendering/utils/camera_data.hpp"
 #include "engine/rendering/render_queue.hpp"
 #include "engine/ecs/components/transform_component.hpp"
 #include "engine/ecs/components/model_component.hpp"
@@ -54,6 +54,7 @@ public:
                         }
 
                         RenderCommand cmd;
+                        cmd.mesh_handle = mesh_handle;
                         cmd.mesh = &mesh;
                         cmd.material = &resource_manager.get_material_instance(selected_material);
 

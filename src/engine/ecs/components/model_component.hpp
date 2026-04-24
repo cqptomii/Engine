@@ -5,8 +5,8 @@
 #ifndef ENGINE_MODEL_COMPONENT_HPP
 #define ENGINE_MODEL_COMPONENT_HPP
 
-#include "../../resources/model/model_resource.hpp"
-#include "../../resources/resource_handle.hpp"
+#include "engine/resources/cpu/model/model_resource.hpp"
+#include "engine/resources/cpu/resource_handle.hpp"
 
 class ModelComponent
 {

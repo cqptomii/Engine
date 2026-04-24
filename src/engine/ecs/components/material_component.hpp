@@ -5,8 +5,8 @@
 #ifndef ENGINE_MATERIAL_COMPONENT_HPP
 #define ENGINE_MATERIAL_COMPONENT_HPP
 
-#include "../src/engine/resources/resource_handle.hpp"
-#include "../../resources/material/material_instance.hpp"
+#include "engine/resources/cpu/resource_handle.hpp"
+#include "engine/resources/cpu/material/material_instance.hpp"
 
 class MaterialComponent
 {

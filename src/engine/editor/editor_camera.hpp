@@ -10,7 +10,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glad/glad.h>
-#include "../src/engine/rendering/camera_data.hpp"
+#include "engine/rendering/utils/camera_data.hpp"
 
 enum CameraMovement
 {

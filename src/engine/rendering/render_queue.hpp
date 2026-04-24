@@ -7,10 +7,12 @@
 #include <algorithm>
 #include <vector>
 
-#include "../resources/material/material_instance.hpp"
-#include "../src/engine/resources/mesh_resource.hpp"
+#include "engine/resources/cpu/material/material_instance.hpp"
+#include "engine/resources/cpu/mesh_resource.hpp"
+#include "engine/resources/cpu/resource_handle.hpp"
 struct RenderCommand
 {
+    ResourceHandle<MeshResource> mesh_handle{};
     MeshResource* mesh = nullptr;
     MaterialInstance* material = nullptr;
     glm::mat4 transform{1.0f};

@@ -26,7 +26,7 @@ class Engine
     EditorSystem editor_system;
     RenderSystem render_system;
     Renderer renderer;
-    ResourceManager resource_manager;
+    CpuResourceManager resource_manager;
 
     // Current Scene displayed
     Scene current_scene;
