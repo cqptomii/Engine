@@ -10,6 +10,7 @@
 #include "engine/rendering/render_queue.hpp"
 #include "engine/ecs/components/transform_component.hpp"
 #include "engine/ecs/components/model_component.hpp"
+#include "engine/ecs/components/mesh_component.hpp"
 #include "engine/ecs/components/material_component.hpp"
 
 
@@ -69,26 +70,34 @@ public:
             }
         );
 
-        /***
-        // Update Shaders
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, &projection_matrix[0][0]);
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, &view_matrix[0][0]);
+        registry.view<TransformComponent, MeshComponent>(
+            [&](entt::entity e, TransformComponent& transform, MeshComponent& meshComp)
+            {
+                if (!registry.raw().all_of<MaterialComponent>(e))
+                {
+                    return;
+                }
 
+                const ResourceHandle<MaterialInstance> material_handle = registry.raw().get<MaterialComponent>(e).get_material();
+                if (!material_handle)
+                {
+                    return;
+                }
 
-        // Rendering
-        glBindVertexArray(VAO);
-        for (auto cubePosition : cubePositions)
-        {
-            // calculate the model matrix for each object and pass it to shader before drawing
-            auto model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
-            model = glm::translate(model, cubePosition);
+                const ResourceHandle<MeshResource> mesh_handle = meshComp.get_mesh();
+                MeshResource& mesh = resource_manager.get_mesh(mesh_handle);
 
-            model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(1.0f, 0.3f, 0.5f));
-            glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, &model[0][0]);
+                RenderCommand cmd;
+                cmd.mesh_handle = mesh_handle;
+                cmd.mesh = &mesh;
+                cmd.material = &resource_manager.get_material_instance(material_handle);
+                cmd.transform = transform.get_model_matrix();
+                cmd.view = view;
+                cmd.projection = projection;
 
-            glDrawArrays(GL_TRIANGLES, 0, 36);
-        }
-        **/
+                queue.push(cmd);
+            }
+        );
     }
 };
 

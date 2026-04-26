@@ -114,34 +114,44 @@ public:
         if (!this->camera_ubo)
         {
             this->camera_ubo = std::make_unique<Buffer>(GL_UNIFORM_BUFFER);
+            this->camera_ubo->bind();
             this->camera_ubo->set_data(size, data, GL_DYNAMIC_DRAW);
         }
         else
         {
+            this->camera_ubo->bind();
             this->camera_ubo->update_data(0, size, data);
         }
+
+        this->camera_ubo->bind_base(0);
     }
     void set_object_ubo_data(const void* data, size_t size)
     {
         if (!this->object_ubo)
         {
             this->object_ubo = std::make_unique<Buffer>(GL_UNIFORM_BUFFER);
+            this->object_ubo->bind();
             this->object_ubo->set_data(size, data, GL_DYNAMIC_DRAW);
         }
         else
         {
+            this->object_ubo->bind();
             this->object_ubo->update_data(0, size, data);
         }
+
+         this->object_ubo->bind_base(1);
     }
     void set_material_ubo_data(const void* data, size_t size)
     {
         if (!this->material_ubo)
         {
             this->material_ubo = std::make_unique<Buffer>(GL_UNIFORM_BUFFER);
+            this->material_ubo->bind();
             this->material_ubo->set_data(size, data, GL_DYNAMIC_DRAW);
         }
         else
         {
+            this->material_ubo->bind();
             this->material_ubo->update_data(0, size, data);
         }
     }

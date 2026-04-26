@@ -26,9 +26,12 @@ class Mesh
     {
         // Update the amount of indices to draw on the viewport
         this->index_count = static_cast<int>(index_count);
+        printf("Mesh: Uploading %zu vertices and %zu indices to the GPU.\n", vertex_count, index_count);
 
         // Bind the VAO
         this->vao.bind();
+        this->vbo.bind();
+        this->ebo.bind();
 
         // Fill the VBO and the EBO with the vertices and the indices data
         this->vbo.set_data(vertex_count * sizeof(Vertex), vertices, usage);
@@ -64,7 +67,8 @@ public:
     {
         // Bind the vertex Array before drawing on the viewport
         this->vao.bind();
-       glDrawElements(drawing_mode, this->index_count, GL_UNSIGNED_INT, nullptr);
+        glDrawElements(drawing_mode, this->index_count, GL_UNSIGNED_INT, nullptr);
+        this->vao.unbind();
     }
     bool operator<(const Mesh& other) const
     {

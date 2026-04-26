@@ -16,6 +16,10 @@
 #include "engine/rendering/renderer.hpp"
 #include "engine/systems/editor_system.hpp"
 #include "engine/systems/render_system.hpp"
+#include "engine/core/primitives/MeshPrimitive3D.hpp"
+#include "engine/ecs/components/mesh_component.hpp"
+#include "engine/ecs/components/material_component.hpp"
+#include "engine/ecs/components/transform_component.hpp"
 #include "engine/utils.hpp"
 
 class Engine
@@ -58,8 +62,8 @@ class Engine
                       << std::endl;
             exit(EXIT_FAILURE);
         }
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 #ifdef __APPLE__
@@ -71,6 +75,23 @@ class Engine
         this->window_ptr.release();
     }
 
+    void initialize_default_scene()
+    {
+        const auto cube_mesh = MeshPrimitive3D::CreateCube(this->resource_manager, "primitive/cube/default");
+        const auto default_material = this->resource_manager.load_material_resource(
+            "material/default",
+            "sources/shader/base.vs",
+            "sources/shader/base.fs",
+            {}
+        );
+        const auto default_material_instance = this->resource_manager.create_material_instance(default_material);
+
+        const entt::entity cube_entity = this->current_scene.add_object();
+        this->current_scene.add_component(cube_entity, TransformComponent{glm::vec3(0.0f, 0.0f, 0.0f), glm::quat(), glm::vec3(1.0f)});
+        this->current_scene.add_component(cube_entity, MeshComponent{cube_mesh});
+        this->current_scene.add_component(cube_entity, MaterialComponent{default_material_instance});
+    }
+
 public:
     Engine() : current_scene(this->resource_manager)
     {
@@ -78,12 +99,14 @@ public:
 
         this->window_ptr = std::make_unique<Window>(800, 600, "Engine");
         this->window_ptr->setUserPointer(&this->input_manager);
+        this->initialize_default_scene();
     }
 
     explicit Engine(std::unique_ptr<Window> window) : current_scene(this->resource_manager)
     {
         init();
         this->window_ptr = std::move(window);
+        this->initialize_default_scene();
     }
 
     ~Engine()
@@ -95,83 +118,6 @@ public:
     // Main function
     void run()
     {
-
-        /**
-        // Creation du shader
-        float vertices[] = {
-            -0.5f, -0.5f, -0.5f,
-             0.5f, -0.5f, -0.5f,
-             0.5f,  0.5f, -0.5f,
-             0.5f,  0.5f, -0.5f,
-            -0.5f,  0.5f, -0.5f,
-            -0.5f, -0.5f, -0.5f,
-
-            -0.5f, -0.5f,  0.5f,
-             0.5f, -0.5f,  0.5f,
-             0.5f,  0.5f,  0.5f,
-             0.5f,  0.5f,  0.5f,
-            -0.5f,  0.5f,  0.5f,
-            -0.5f, -0.5f,  0.5f,
-
-            -0.5f,  0.5f,  0.5f,
-            -0.5f,  0.5f, -0.5f,
-            -0.5f, -0.5f, -0.5f,
-            -0.5f, -0.5f, -0.5f,
-            -0.5f, -0.5f,  0.5f,
-            -0.5f,  0.5f,  0.5f,
-
-             0.5f,  0.5f,  0.5f,
-             0.5f,  0.5f, -0.5f,
-             0.5f, -0.5f, -0.5f,
-             0.5f, -0.5f, -0.5f,
-             0.5f, -0.5f,  0.5f,
-             0.5f,  0.5f,  0.5f,
-
-            -0.5f, -0.5f, -0.5f,
-             0.5f, -0.5f, -0.5f,
-             0.5f, -0.5f,  0.5f,
-             0.5f, -0.5f,  0.5f,
-            -0.5f, -0.5f,  0.5f,
-            -0.5f, -0.5f, -0.5f,
-
-            -0.5f,  0.5f, -0.5f,
-             0.5f,  0.5f, -0.5f,
-             0.5f,  0.5f,  0.5f,
-             0.5f,  0.5f,  0.5f,
-            -0.5f,  0.5f,  0.5f,
-            -0.5f,  0.5f, -0.5f,
-        };
-        // world space positions of our cubes
-        glm::vec3 cubePositions[] = {
-            glm::vec3( 0.0f,  0.0f,  0.0f),
-            glm::vec3( 2.0f,  5.0f, -15.0f),
-            glm::vec3(-1.5f, -2.2f, -2.5f),
-            glm::vec3(-3.8f, -2.0f, -12.3f),
-            glm::vec3( 2.4f, -0.4f, -3.5f),
-            glm::vec3(-1.7f,  3.0f, -7.5f),
-            glm::vec3( 1.3f, -2.0f, -2.5f),
-            glm::vec3( 1.5f,  2.0f, -2.5f),
-            glm::vec3( 1.5f,  0.2f, -1.5f),
-            glm::vec3(-1.3f,  1.0f, -1.5f)
-        };
-
-        unsigned int VBO, VAO;
-        glGenVertexArrays(1, &VAO);
-        glGenBuffers(1, &VBO);
-
-        glBindVertexArray(VAO);
-
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-        // position attribute
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)nullptr);
-        glEnableVertexAttribArray(0);
-
-        // Shader processing
-        unsigned int shaderProgram = makeShaderProgram(vertexShaderSource, fragmentShaderSource);
-        **/
-
         float red = 0.0f, green = 0.0f, blue = 0.0f, alpha = 1.0f;
         convert_hex_to_rgba(0x383c42, red, green, blue, alpha);
 
@@ -193,6 +139,10 @@ public:
             glClearColor(red, green, blue, alpha);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+            // Set the OpenGL state for rendering
+            this->window_ptr->set_depth_test(true);
+            this->window_ptr->disable_blending();
+
             // Update viewports
             this->editor_system.update(this->current_scene, input_manager);
 
@@ -200,7 +150,6 @@ public:
             // Get the editorCamera data
             auto editor_camera = this->editor_system.get_main_camera().get_camera_data(window_ptr->width, window_ptr->height);
             RenderQueue queue;
-
             // Render the scene onto the screen
             this->render_system.update(
                 this->current_scene,

@@ -20,10 +20,8 @@ public:
     }
 
     void set_vertex_attrib_pointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void* offset) {
-        glBindVertexArray(vao_id);
         glVertexAttribPointer(index, size, type, normalized, stride, offset);
         glEnableVertexAttribArray(index);
-        glBindVertexArray(0);
     }
 
     void bind() const {

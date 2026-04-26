@@ -72,7 +72,10 @@ public:
             // Load the given shader
             ShaderResource&  shader_resource= resource_manager.get_shader(material_resource.get_shader());
             Shader* shader = this->gpu_resource_manager->get_shader(material_resource.get_shader(), shader_resource);
-            
+
+            shader->bind_ubo("CameraData", 0);
+            shader->bind_ubo("ModelData", 1);
+
             // Update Shader Uniform related to the Camera Transformation
             const CameraUBO cam_data{cmd.view, cmd.projection};
             this->gpu_resource_manager->set_camera_ubo_data(&cam_data, sizeof(CameraUBO));

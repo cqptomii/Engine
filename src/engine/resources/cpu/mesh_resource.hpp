@@ -5,6 +5,7 @@
 #ifndef ENGINE_MESH_RESOURCE_HPP
 #define ENGINE_MESH_RESOURCE_HPP
 
+#define GLM_FORCE_PACKED
 #include <glm/glm.hpp>
 #include <vector>
 #include "engine/resources/cpu/resource_handle.hpp"
@@ -34,7 +35,9 @@ class MeshResource
     std::vector<SubMesh> submeshes;
 
 public:
-    MeshResource(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices) : vertices(vertices), indices(indices) {}
+    MeshResource(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices) : vertices(vertices), indices(indices) {
+        std::cout << sizeof(Vertex) << std::endl;
+    }
 
     void add_submesh(const SubMesh& submesh)
     {
