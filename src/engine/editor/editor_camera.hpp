@@ -61,7 +61,6 @@ public:
     {
         this->update_cam_parameters();
     }
-
     EditorCamera(glm::vec3 position, glm::vec3 direction) : cam_position(position), cam_direction(direction), cam_yaw(-90.), cam_pitch(0.), cam_roll(0.), cam_up(), cam_right()
     {
         this->update_cam_parameters();
@@ -92,6 +91,25 @@ public:
             this->get_projection_matrix(width, height),
             this->cam_position,
         };
+    }
+
+    void screen_point_to_ray(const float mouse_x, const float mouse_y, const int screen_width, const int screen_height, glm::vec3& ray_origin, glm::vec3& ray_direction)
+    {
+        // Convert screen coordinates to normalized device coordinates (NDC)
+        float x = (2.0f * mouse_x) / screen_width - 1.0f;
+        float y = 1.0f - (2.0f * mouse_y) / screen_height;
+        float z = 1.0f;
+
+        // Create a ray in NDC space
+        glm::vec4 ray_nds(x, y, z, 1.0f);
+
+        // Convert the ray from NDC to world space
+        glm::mat4 inv_projection = glm::inverse(this->get_projection_matrix(screen_width, screen_height));
+        glm::mat4 inv_view = glm::inverse(this->get_view_matrix());
+        glm::vec4 ray_world = inv_view * inv_projection * ray_nds;
+
+        ray_direction = glm::normalize(glm::vec3(ray_world));
+        ray_origin = this->cam_position;
     }
 
     void process_cam_movement(const CameraMovement direction, const float delta_time)
