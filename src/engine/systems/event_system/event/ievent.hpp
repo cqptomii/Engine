@@ -1,7 +1,7 @@
 #ifndef IEVENT_HPP
 #define IEVENT_HPP
 
-#include "engine/systems/event_sytem/event_category.hpp"
+#include "engine/systems/event_system/event_category.hpp"
 
 class IEvent
 {

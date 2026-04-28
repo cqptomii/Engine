@@ -1,7 +1,7 @@
 #ifndef WINDOWRESIZE_EVENT_HPP
 #define WINDOWRESIZE_EVENT_HPP
 
-#include "engine/systems/event_sytem/event/IEvent.hpp"
+#include "engine/systems/event_system/event/IEvent.hpp"
 
 class WindowResizeEvent : public IEvent
 {

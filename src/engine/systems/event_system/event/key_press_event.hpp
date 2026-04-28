@@ -1,7 +1,7 @@
 #ifndef KEYPRESS_EVENT_HPP
 #define KEYPRESS_EVENT_HPP
 
-#include "engine/systems/event_sytem/event/IEvent.hpp"
+#include "engine/systems/event_system/event/IEvent.hpp"
 
 class KeyPressEvent : public IEvent
 {

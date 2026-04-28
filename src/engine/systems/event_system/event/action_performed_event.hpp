@@ -1,6 +1,8 @@
 #ifndef ACTIONPERFORMED_EVENT_HPP
 #define ACTIONPERFORMED_EVENT_HPP
 
+#include "engine/systems/event_system/event/IEvent.hpp"
+
 class ActionPerformedEvent : public IEvent
 {
 private:

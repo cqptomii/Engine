@@ -1,19 +1,19 @@
 #ifndef MOUSEMOTION_EVENT_HPP
 #define MOUSEMOTION_EVENT_HPP
 
-#include "engine/systems/event_sytem/event/IEvent.hpp"
+#include "engine/systems/event_system/event/IEvent.hpp"
 
 class MouseMotionEvent : public IEvent
 {
 private:
-    int x;
-    int y;
+    float x;
+    float y;
 public:
-    MouseMotionEvent(int x, int y) : x(x), y(y) {}
+    MouseMotionEvent(float x, float y) : x(x), y(y) {}
     ~MouseMotionEvent() override = default;
 
-    int get_x() const { return x; }
-    int get_y() const { return y; }
+    float get_x() const { return x; }
+    float get_y() const { return y; }
 
     DEFINE_EVENT_TYPE(MouseMotionEvent, 
         static_cast<int>(EventCategory::Mouse) | static_cast<int>(EventCategory::Input)
