@@ -5,6 +5,7 @@
 #ifndef ENGINE_RENDER_SYSTEM_HPP
 #define ENGINE_RENDER_SYSTEM_HPP
 
+#include <memory>
 #include "engine/scene/Scene.hpp"
 #include "engine/rendering/utils/camera_data.hpp"
 #include "engine/rendering/render_queue.hpp"
@@ -13,12 +14,20 @@
 #include "engine/ecs/components/mesh_component.hpp"
 #include "engine/ecs/components/material_component.hpp"
 
+#include <engine/rendering/renderer.hpp>
+#include <engine/rendering/render_queue.hpp>
 
 class RenderSystem
 {
+private:
+    std::unique_ptr<Renderer> renderer_ptr;
+    std::unique_ptr<RenderQueue> render_queue_ptr;
 public:
-    explicit RenderSystem() = default;
-    void update(Scene& scene, const CameraData& camera, RenderQueue& queue)
+    explicit RenderSystem() {
+        this->renderer_ptr = std::make_unique<Renderer>();
+        this->render_queue_ptr = std::make_unique<RenderQueue>();
+    };
+    void update(Scene& scene, const CameraData& camera, bool editor_mode = true)
     {
         // Set the matrix given by the main camera of the scene
         glm::mat4 view, projection;
@@ -64,7 +73,7 @@ public:
                         cmd.view = view;
                         cmd.projection = projection;
 
-                        queue.push(cmd);
+                        this->render_queue_ptr->push(cmd);
                     }
                 }
             }
@@ -95,9 +104,17 @@ public:
                 cmd.view = view;
                 cmd.projection = projection;
 
-                queue.push(cmd);
+                this->render_queue_ptr->push(cmd);
             }
         );
+
+
+        // Sort the rendering commands
+        this->render_queue_ptr->sort();
+
+        // Render the scene on the screen
+        this->renderer_ptr->execute(*this->render_queue_ptr, resource_manager, editor_mode);
+
     }
 };
 

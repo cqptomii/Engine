@@ -29,7 +29,6 @@ class Engine
 
     EditorSystem editor_system;
     RenderSystem render_system;
-    Renderer renderer;
     CpuResourceManager resource_manager;
 
     // Current Scene displayed
@@ -146,22 +145,15 @@ public:
             // Update viewports
             this->editor_system.update(this->current_scene, input_manager);
 
-
             // Get the editorCamera data
             auto editor_camera = this->editor_system.get_main_camera().get_camera_data(window_ptr->width, window_ptr->height);
-            RenderQueue queue;
+
             // Render the scene onto the screen
             this->render_system.update(
                 this->current_scene,
                 editor_camera,
-                queue
+                this->editor_system.get_editor_mode()
             );
-
-            // Sort the rendering commands
-            queue.sort();
-
-            // Render the scene on the screen
-            this->renderer.render(editor_camera, queue, this->current_scene.get_resource_manager(), this->editor_system.get_editor_mode());
 
             // Window buffer Update
             this->window_ptr->update();
