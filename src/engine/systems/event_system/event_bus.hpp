@@ -1,9 +1,9 @@
 #ifndef EVENTBUS_HPP
 #define EVENTBUS_HPP
 
-#include "engine/systems/event_sytem/event/IEvent.hpp"
-#include "engine/systems/event_sytem/event_listener.hpp"
-#include "engine/systems/event_sytem/event_dispatcher.hpp"
+#include "engine/systems/event_system/event/IEvent.hpp"
+#include "engine/systems/event_system/event_listener.hpp"
+#include "engine/systems/event_system/event_dispatcher.hpp"
 #include <vector>
 #include <mutex>
 #include <queue>
