@@ -145,8 +145,12 @@ public:
             // Update viewports
             this->editor_system.update(this->current_scene, input_manager);
 
+            int framebuffer_width = 0;
+            int framebuffer_height = 0;
+            glfwGetFramebufferSize(this->window_ptr->get_window_ptr(), &framebuffer_width, &framebuffer_height);
+
             // Get the editorCamera data
-            auto editor_camera = this->editor_system.get_main_camera().get_camera_data(window_ptr->width, window_ptr->height);
+            auto editor_camera = this->editor_system.get_main_camera().get_camera_data(framebuffer_width, framebuffer_height);
 
             // Render the scene onto the screen
             this->render_system.update(
@@ -167,7 +171,7 @@ public:
         this->fps_timer += delta_time;
         this->fps_frame_count++;
 
-        if (this->fps_timer >= 0.5f)
+        if (this->fps_timer >= 1.0f)
         {
             this->displayed_fps = static_cast<float>(this->fps_frame_count) / this->fps_timer;
             std::cout << "FPS: " << this->displayed_fps << std::endl;

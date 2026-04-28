@@ -29,6 +29,9 @@ public:
     };
     void update(Scene& scene, const CameraData& camera, bool editor_mode = true)
     {
+        // Rebuild render commands from scratch every frame.
+        this->render_queue_ptr->clear();
+
         // Set the matrix given by the main camera of the scene
         glm::mat4 view, projection;
 
