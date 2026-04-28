@@ -67,6 +67,7 @@ add_executable(Engine
         src/engine/ecs/components/light_component.hpp
         src/engine/ecs/components/camera_component.hpp
         src/engine/ecs/components/model_component.hpp
+        src/engine/ecs/components/mesh_component.hpp
         src/engine/ecs/components/material_component.hpp
 
         src/engine/scene/Scene.hpp
@@ -117,6 +118,12 @@ if (WIN32)
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:assimp>
             $<TARGET_FILE_DIR:Engine>
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:glfw>
+            $<TARGET_FILE_DIR:Engine>
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_SOURCE_DIR}/sources
+            $<TARGET_FILE_DIR:Engine>/sources
     )
 elseif(APPLE)
     find_library(COCOA Cocoa)
