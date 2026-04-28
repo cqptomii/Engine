@@ -108,12 +108,11 @@ public:
             }
         );
 
-
         // Sort the rendering commands
         this->render_queue_ptr->sort();
 
         // Render the scene on the screen
-        this->renderer_ptr->execute(*this->render_queue_ptr, resource_manager, editor_mode);
+        this->renderer_ptr->render(camera, *this->render_queue_ptr, resource_manager, editor_mode);
 
     }
 };
