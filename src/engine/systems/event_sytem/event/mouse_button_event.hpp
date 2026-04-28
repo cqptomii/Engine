@@ -3,7 +3,7 @@
 
 #include "engine/systems/event_sytem/event/IEvent.hpp"
 
-class MouseClickEvent : public IEvent
+class MouseButtonEvent : public IEvent
 {
 private:
     int button;
@@ -11,15 +11,17 @@ private:
     int y;
 public:
 
-    MouseClickEvent(int button, int x, int y) : button(button), x(x), y(y) {}
-    ~MouseClickEvent() override = default;
+    MouseButtonEvent(int button, int x, int y) : button(button), x(x), y(y) {}
+    ~MouseButtonEvent() override = default;
 
     int get_button() const { return button; }
 
     int get_x() const { return x; }
     int get_y() const { return y; }
 
-    DEFINE_EVENT_TYPE(MouseClickEvent)
+    DEFINE_EVENT_TYPE(MouseButtonEvent, 
+        static_cast<int>(EventCategory::MouseButton) | static_cast<int>(EventCategory::Input)
+    )
 };
 
 #endif //MOUSECLICK_EVENT_HPP

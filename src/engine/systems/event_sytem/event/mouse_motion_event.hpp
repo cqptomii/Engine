@@ -15,7 +15,9 @@ public:
     int get_x() const { return x; }
     int get_y() const { return y; }
 
-    DEFINE_EVENT_TYPE(MouseMotionEvent)
+    DEFINE_EVENT_TYPE(MouseMotionEvent, 
+        static_cast<int>(EventCategory::Mouse) | static_cast<int>(EventCategory::Input)
+    )
 };
 
 #endif //MOUSEMOTION_EVENT_HPP

@@ -17,7 +17,9 @@ public:
     bool get_is_repeat() const { return is_repeat; }
 
 
-    DEFINE_EVENT_TYPE(KeyReleaseEvent)
+    DEFINE_EVENT_TYPE(KeyReleaseEvent, 
+        static_cast<int>(EventCategory::Keyboard) | static_cast<int>(EventCategory::Input)
+    )
 };
 
 

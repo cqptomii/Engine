@@ -15,7 +15,9 @@ public:
     double get_x_offset() const { return x_offset; }
     double get_y_offset() const { return y_offset; }
 
-    DEFINE_EVENT_TYPE(MouseScrollEvent)
+    DEFINE_EVENT_TYPE(MouseScrollEvent, 
+        static_cast<int>(EventCategory::Mouse) | static_cast<int>(EventCategory::Input)
+    )
 };
 
 #endif //MOUSESCROLL_EVENT_HPP

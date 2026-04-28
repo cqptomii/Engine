@@ -15,7 +15,9 @@ public:
     int get_width() const { return width; }
     int get_height() const { return height; }
 
-    DEFINE_EVENT_TYPE(WindowResizeEvent)
+    DEFINE_EVENT_TYPE(WindowResizeEvent, 
+        static_cast<int>(EventCategory::Window) | static_cast<int>(EventCategory::Application)
+    )
 };
 
 #endif //WINDOWRESIZE_EVENT_HPP

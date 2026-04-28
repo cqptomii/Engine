@@ -12,8 +12,16 @@
 class EventBus
 {
 private:
+
+    struct EventListenerInfo
+    {
+        EventListener* listener;
+        int filter;
+    };
+
+
     // List of event listeners
-    std::vector<EventListener*> listeners;
+    std::vector<EventListenerInfo> listeners_info;
     std::queue<std::unique_ptr<IEvent> event_queue;
     std::mutex mutex;
     bool immediate = true;
@@ -31,12 +39,16 @@ public:
         return immediate;
     }
 
-    void add_listener(EventListener* listener){
-        listeners.push_back(listener);
+    void add_listener(EventListener* listener, int filter = -1){
+        listeners_info.push_back(
+            EventListenerInfo{listener, filter}
+        );
     }
     void remove_listener(EventListener* listener){
         // Find the listener int the list if it exist
-        auto it = std::find(listeners.begin(), listeners.end(), listener);
+        auto it = std::find(listeners_info.begin(), listeners_info.end(), [listener](const EventListenerInfo& info) {
+            return info.listener == listener;
+        });
         if (it != listeners.end()) {
             listeners.erase(it);
         }
@@ -44,8 +56,10 @@ public:
 
     void publish_event(const IEvent& event){
         if (immediate) {
-            for (auto& listener : listeners) {
-                listener->on_event(event);
+            for (auto& info : listeners_info) {
+                if (info.filter == -1 || (event.get_category_flags() & info.filter)) {
+                    info.listener->on_event(event);
+                }
             }
         } else {
             std::lock_guard<std::mutex> lock(mutex);
@@ -63,8 +77,10 @@ public:
             auto& event = event_queue.front();
 
             // Dispatch event to listeners
-            for (auto& listener : listeners) {
-                listener->on_event(*event);
+            for (auto& info : listeners_info) {
+                if( info.filter == -1 || (event->get_category_flags() & info.filter)) {
+                    info.listener->on_event(*event);
+                }
             }
             event_queue.pop();
         }

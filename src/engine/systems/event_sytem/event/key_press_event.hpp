@@ -15,7 +15,9 @@ public:
     int get_key_code() const { return key_code; }
     bool get_is_repeat() const { return is_repeat; }
 
-    DEFINE_EVENT_TYPE(KeyPressEvent)
+    DEFINE_EVENT_TYPE(KeyPressEvent, 
+        static_cast<int>(EventCategory::Keyboard) | static_cast<int>(EventCategory::Input)
+    )
 };
 
 #endif //KEYPRESS_EVENT_HPP
