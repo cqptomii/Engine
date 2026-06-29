@@ -7,15 +7,15 @@ endif()
 project(Engine)
 
 set(CMAKE_CXX_STANDARD 20)
+# Export the clangd Compile_command.json
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
 if (MSVC)
     # Enforce a single MSVC runtime across Engine and fetched dependencies.
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 endif()
 
-# Inclure les headers
-include_directories(libs)
-include_directories(${CMAKE_SOURCE_DIR}/libs/glfw-3.4/include)
 
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
@@ -54,14 +54,48 @@ add_executable(Engine
         src/glad.c
 
         src/engine/utils.hpp
+
+        ## Core
         src/engine/core/engine.hpp
         src/engine/core/window.hpp
+
+        ## Input system
+        src/engine/core/input/input.hpp
         src/engine/core/input/input_manager.hpp
-        src/engine/core/input/input_mapping_context.hpp
+        src/engine/core/input/context/input_mapping_context.hpp
         src/engine/core/input/context/editor_mapping_context.hpp
         src/engine/core/input/context/runtime_mapping_context.hpp
-        src/engine/core/input/input.hpp
+        src/engine/systems/input_system.hpp
 
+        ## Event system
+        src/engine/systems/event_system/event_types.hpp
+        src/engine/systems/event_system/event_category.hpp
+        src/engine/systems/event_system/event_listener.hpp
+        src/engine/systems/event_system/event_dispatcher.hpp
+        src/engine/systems/event_system/event_bus.hpp
+        src/engine/systems/event_system/event/ievent.hpp
+        src/engine/systems/event_system/event/key_press_event.hpp
+        src/engine/systems/event_system/event/key_release_event.hpp
+        src/engine/systems/event_system/event/mouse_motion_event.hpp
+        src/engine/systems/event_system/event/mouse_scroll_event.hpp
+        src/engine/systems/event_system/event/mouse_delta_event.hpp
+        src/engine/systems/event_system/event/mouse_button_pressed_event.hpp
+        src/engine/systems/event_system/event/mouse_button_released_event.hpp
+        src/engine/systems/event_system/event/action_started_event.hpp
+        src/engine/systems/event_system/event/action_performed_event.hpp
+        src/engine/systems/event_system/event/action_ended_event.hpp
+        src/engine/systems/event_system/event/window_resize_event.hpp
+
+        ## Core - OpenGL wrappers
+        src/engine/core/wrapper/Buffer.hpp
+        src/engine/core/wrapper/VAO.hpp
+        src/engine/core/wrapper/TextureBuffer.hpp
+
+        ## Core - Primitives
+        src/engine/core/primitives/MeshPrimitive2D.hpp
+        src/engine/core/primitives/MeshPrimitive3D.hpp
+
+        ## ECS
         src/engine/ecs/registry.hpp
         src/engine/ecs/components/transform_component.hpp
         src/engine/ecs/components/light_component.hpp
@@ -70,18 +104,22 @@ add_executable(Engine
         src/engine/ecs/components/mesh_component.hpp
         src/engine/ecs/components/material_component.hpp
 
+        ## Scene
         src/engine/scene/Scene.hpp
         src/engine/scene/SceneManager.hpp
 
+        ## Editor
         src/engine/editor/editor_camera.hpp
         src/engine/editor/editor_viewport.hpp
         src/engine/editor/runtime_viewport.hpp
         src/engine/editor/iviewport.hpp
-        
+
+        ## Systems
+        src/engine/systems/isystem.hpp
         src/engine/systems/render_system.hpp
-        src/engine/systems/system.hpp
         src/engine/systems/editor_system.hpp
 
+        ## Rendering
         src/engine/rendering/utils/camera_data.hpp
         src/engine/rendering/utils/transform_data.hpp
         src/engine/rendering/utils/ubo_types.hpp
@@ -90,30 +128,36 @@ add_executable(Engine
         src/engine/rendering/gizmo_renderer.hpp
         src/engine/rendering/grid_renderer.hpp
 
+        ## Resources CPU
+        src/engine/resources/cpu/resource_handle.hpp
         src/engine/resources/cpu/cpu_resource_manager.hpp
         src/engine/resources/cpu/shader_resource.hpp
         src/engine/resources/cpu/mesh_resource.hpp
-        src/engine/resources/cpu/material/material_instance.hpp
-        src/engine/resources/cpu/material/material_resource.hpp
         src/engine/resources/cpu/texture_resource.hpp
-        src/engine/resources/cpu/resource_handle.hpp
+        src/engine/resources/cpu/light_resource.hpp
+        src/engine/resources/cpu/material/material_resource.hpp
+        src/engine/resources/cpu/material/material_instance.hpp
         src/engine/resources/cpu/model/model_resource.hpp
         src/engine/resources/cpu/model/model_resource.cpp
+
+        ## Resources GPU
         src/engine/resources/gpu/light.hpp
         src/engine/resources/gpu/shader.hpp
-        src/engine/resources/gpu//texture.hpp
+        src/engine/resources/gpu/texture.hpp
         src/engine/resources/gpu/mesh.hpp
-        src/engine/resources/gpu/light.hpp
         src/engine/resources/gpu/gpu_resource_manager.hpp
-
-
 )
 
-target_include_directories(Engine PRIVATE ${CMAKE_SOURCE_DIR}/src ${glm_SOURCE_DIR})
+target_include_directories(Engine
+    PRIVATE
+        ${CMAKE_SOURCE_DIR}/src
+        ${CMAKE_SOURCE_DIR}/libs
+        ${glm_SOURCE_DIR}
+)
 
 # Lier GLFW et OpenGL
 if (WIN32)
-    target_link_libraries(Engine glfw opengl32 assimp EnTT::EnTT)
+    target_link_libraries(Engine PRIVATE glfw opengl32 assimp EnTT::EnTT)
     add_custom_command(TARGET Engine POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:assimp>
