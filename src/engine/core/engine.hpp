@@ -16,6 +16,8 @@
 #include "engine/rendering/renderer.hpp"
 #include "engine/systems/editor_system.hpp"
 #include "engine/systems/render_system.hpp"
+#include "engine/systems/input_system.hpp"
+#include "engine/systems/event_system/event_bus.hpp"
 #include "engine/core/primitives/MeshPrimitive3D.hpp"
 #include "engine/ecs/components/mesh_component.hpp"
 #include "engine/ecs/components/material_component.hpp"
@@ -25,8 +27,11 @@
 class Engine
 {
     std::unique_ptr<Window> window_ptr;
-    InputManager input_manager = InputManager();
 
+    EventBus event_bus;
+
+    InputManager input_manager;
+    InputSystem input_system;
     EditorSystem editor_system;
     RenderSystem render_system;
     CpuResourceManager resource_manager;
@@ -41,12 +46,25 @@ class Engine
     uint32_t fps_frame_count = 0;
     float displayed_fps = 0.0f;
 
+    /**
+     * @brief GLFW error callback
+     * Print the error code and the description of the error
+     */
     static void glfw_error_callback(const int error_code, const char* description)
     {
         std::cerr << "GLFW Error [" << error_code << "]: "
                   << (description ? description : "unknown") << std::endl;
     }
 
+
+    /**
+     * @brief Initialize the GLFW library and the OpenGL context
+     * Set the error callback
+     * Initialize the GLFW library
+     * Set the window hints
+     * Initialize the OpenGL context
+     * Initialize the OpenGL context
+     */
     static void init()
     {
         glfwSetErrorCallback(glfw_error_callback);
@@ -69,11 +87,26 @@ class Engine
         glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT,GL_TRUE);
 #endif
     }
+
+    /**
+     * @brief Cleanup the window object
+     * Release the window object
+     */
     void cleanup()
     {
         this->window_ptr.release();
     }
 
+    /**
+     * @brief Initialize the default scene
+     * Create a new cube mesh
+     * Create a new default material
+     * Create a new default material instance
+     * Add the cube entity to the scene
+     * Add the transform component to the cube entity
+     * Add the mesh component to the cube entity
+     * Add the material component to the cube entity
+     */
     void initialize_default_scene()
     {
         const auto cube_mesh = MeshPrimitive3D::CreateCube(this->resource_manager, "primitive/cube/default");
@@ -92,29 +125,68 @@ class Engine
     }
 
 public:
-    Engine() : current_scene(this->resource_manager)
+
+    /**
+     * @brief Default Constructor
+     * Initialize the GLFW library
+     * Create a new window object
+     * Set the user pointer for the input system
+     * Initialize the default scene
+     */
+    Engine() : current_scene(this->resource_manager), event_bus(), 
+    input_manager(event_bus),
+    input_system(event_bus),
+    resource_manager()
     {
         init();
 
         this->window_ptr = std::make_unique<Window>(800, 600, "Engine");
-        this->window_ptr->setUserPointer(&this->input_manager);
+        this->window_ptr->setUserPointer(&this->input_system);
         this->initialize_default_scene();
     }
 
-    explicit Engine(std::unique_ptr<Window> window) : current_scene(this->resource_manager)
+    /**
+     * @brief Constructor with a window object in parameter
+     * 
+     * @param window : The window object
+     * Initialize the GLFW library
+     * Move the window object
+     * Set the user pointer for the input system
+     * Initialize the default scene
+     */
+    explicit Engine(std::unique_ptr<Window> window) : current_scene(this->resource_manager), 
+    event_bus(), 
+    input_manager(event_bus),
+    input_system(event_bus),
+    resource_manager()
     {
         init();
         this->window_ptr = std::move(window);
+        this->window_ptr->setUserPointer(&this->input_system);
         this->initialize_default_scene();
     }
 
+    /**
+     * @brief Default Destructor
+     * Terminate the GLFW library and cleanup the window
+     */
     ~Engine()
     {
         glfwTerminate();
         this->cleanup();
     }
 
-    // Main function
+    /**
+     * @brief Main function
+     * Run the engine
+     * Update the input system
+     * Clear the color and depth buffer
+     * Set the OpenGL state for rendering
+     * Update the viewports
+     * Render the scene onto the screen
+     * Update the window buffer
+     * Show the frame rate
+     */
     void run()
     {
         float red = 0.0f, green = 0.0f, blue = 0.0f, alpha = 1.0f;
@@ -131,8 +203,7 @@ public:
                 this->delta_time = 0.0f;
             }
 
-
-            // process inputs
+            // Update action from the input manager
             this->input_manager.update();
 
             glClearColor(red, green, blue, alpha);
@@ -166,6 +237,15 @@ public:
         }
     }
 
+    /**
+     * @brief Show the frame rate
+     * 
+     * @param delta_time : The delta time
+     * Calculate the frame rate
+     * Show the frame rate
+     * Reset the frame rate timer
+     * Reset the frame rate frame count
+     */
     void show_frame_rate(const float delta_time)
     {
         this->fps_timer += delta_time;

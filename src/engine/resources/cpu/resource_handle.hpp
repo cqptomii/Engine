@@ -18,13 +18,14 @@
 template<typename T>
 class ResourceHandle
 {
-public:    
+private:
     // INVALID_ID is used to represent an invalid resource handle
     static constexpr uint32_t INVALID_ID = std::numeric_limits<uint32_t>::max();
     
     // The id of the resource handle
     uint32_t m_id = INVALID_ID;
 
+public:    
     /**
      * @brief Construct a new Resource Handle object with the default value
      * @details The default value is INVALID_ID
@@ -56,6 +57,13 @@ public:
     }
 
     /**
+     * @brief Construct a new RessourceHandle based on an specified index
+     * 
+     * @param other_id 
+     */
+    ResourceHandle(uint32_t other_id) noexcept : m_id(other_id) {}
+
+    /**
      * @brief Move assignment operator
      * @details The move assignment operator is used to move a resource handle
      * @param other The resource handle to move
@@ -81,6 +89,15 @@ public:
     constexpr explicit operator bool() const noexcept
     {
         return this->m_id != INVALID_ID;
+    }
+
+    /**
+     * @brief Getter for the id of the ressource handle
+     * 
+     * @return uint32_t  ressource handle id
+     */
+    uint32_t get_id(){
+        return this->m_id;
     }
 };
 
