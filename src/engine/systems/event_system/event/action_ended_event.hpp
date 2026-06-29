@@ -1,7 +1,8 @@
 #ifndef ACTION_ENDED_EVENT_HPP
 #define ACTION_ENDED_EVENT_HPP
 
-#include "engine/systems/event_system/event/IEvent.hpp"
+#include "engine/systems/event_system/event/ievent.hpp"
+#include <string>
 
 class ActionEndedEvent : public IEvent
 {
@@ -13,7 +14,7 @@ public:
 
     const std::string& get_action_name() const { return action_name; }
 
-    DEFINE_EVENT_TYPE(ActionEndedEvent, 
+    DEFINE_EVENT_TYPE(ActionEnded, 
         static_cast<int>(EventCategory::Input)
     )
 };

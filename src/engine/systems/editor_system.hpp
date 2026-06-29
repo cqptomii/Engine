@@ -5,11 +5,11 @@
 #ifndef ENGINE_EDITOR_SYSTEM_HPP
 #define ENGINE_EDITOR_SYSTEM_HPP
 
-#include "../src/engine/editor/editor_viewport.hpp"
-#include "../src/engine/editor/runtime_viewport.hpp"
-#include "../src/engine/editor/iviewport.hpp"
-#include "../src/engine/scene/Scene.hpp"
-#include "../src/engine/core/input/input_manager.hpp"
+#include "engine/editor/editor_viewport.hpp"
+#include "engine/editor/runtime_viewport.hpp"
+#include "engine/editor/iviewport.hpp"
+#include "engine/scene/Scene.hpp"
+#include "engine/core/input/input_manager.hpp"
 
 class EditorSystem
 {

@@ -1,7 +1,8 @@
 #ifndef ACTIONPERFORMED_EVENT_HPP
 #define ACTIONPERFORMED_EVENT_HPP
 
-#include "engine/systems/event_system/event/IEvent.hpp"
+#include "engine/systems/event_system/event/ievent.hpp"
+#include <string>
 
 class ActionPerformedEvent : public IEvent
 {
@@ -13,7 +14,7 @@ public:
 
     const std::string& get_action_name() const { return action_name; }
 
-    DEFINE_EVENT_TYPE(ActionPerformedEvent, 
+    DEFINE_EVENT_TYPE(ActionPerformed, 
         static_cast<int>(EventCategory::Input)
     )
 };

@@ -5,7 +5,7 @@
 #ifndef ENGINE_EDITOR_MAPPING_CONTEXT_HPP
 #define ENGINE_EDITOR_MAPPING_CONTEXT_HPP
 
-#include "../input_mapping_context.hpp"
+#include "engine/core/input/context/input_mapping_context.hpp"
 #include <GLFW/glfw3.h>
 
 class EditorMappingContext : public InputMappingContext

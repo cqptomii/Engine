@@ -1,7 +1,7 @@
 #ifndef WINDOWRESIZE_EVENT_HPP
 #define WINDOWRESIZE_EVENT_HPP
 
-#include "engine/systems/event_system/event/IEvent.hpp"
+#include "engine/systems/event_system/event/ievent.hpp"
 
 class WindowResizeEvent : public IEvent
 {
@@ -15,7 +15,7 @@ public:
     int get_width() const { return width; }
     int get_height() const { return height; }
 
-    DEFINE_EVENT_TYPE(WindowResizeEvent, 
+    DEFINE_EVENT_TYPE(WindowResized, 
         static_cast<int>(EventCategory::Window) | static_cast<int>(EventCategory::Application)
     )
 };

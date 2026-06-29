@@ -1,39 +1,58 @@
-//
-// Created by tomfr on 06/03/2026.
-//
+/**
+ * @file input_manager.hpp
+ * @author Tom FRAISSE
+ * @brief 
+ * @version 0.1
+ * @date 2026-06-29
+ * 
+ * @copyright Copyright (c) 2026
+ * 
+ */
 
 #ifndef ENGINE_INPUT_MANAGER_HPP
 #define ENGINE_INPUT_MANAGER_HPP
 
 #include <GLFW/glfw3.h>
-#include <unordered_set>
-#include <string>
 #include <glm/glm.hpp>
-#include "engine/core/input/context/input_mapping_context.hpp"
+
+#include <string>
+#include <utility>
+#include <memory.h>
+#include <unordered_map>
+
+#include "engine/systems/event_system/event_listener.hpp"
 #include "engine/core/input/context/editor_mapping_context.hpp"
+#include "engine/core/input/context/input_mapping_context.hpp"
+#include "engine/core/input/context/input_mapping_context.hpp"
 #include "engine/core/input/context/runtime_mapping_context.hpp"
 #include "engine/systems/event_system/event_bus.hpp"
-#include "engine/systems/event_system/event_listener.hpp"
+
+// Events Inludes
+#include "engine/systems/event_system/event/key_press_event.hpp"
+#include "engine/systems/event_system/event/key_release_event.hpp"
+#include "engine/systems/event_system/event/mouse_motion_event.hpp"
+#include "engine/systems/event_system/event/mouse_button_pressed_event.hpp"
+#include "engine/systems/event_system/event/mouse_button_released_event.hpp"
 #include "engine/systems/event_system/event/mouse_delta_event.hpp"
-#include "engine/systems/event_system/event/action_started_event.hpp
-#include "engine/systems/event_system/event/action_performed_event.hpp
+#include "engine/systems/event_system/event/mouse_scroll_event.hpp"
+#include "engine/systems/event_system/event/window_resize_event.hpp"
 #include "engine/systems/event_system/event/action_ended_event.hpp"
-#include "engine/systems/event_system/event_category.hpp"
+#include "engine/systems/event_system/event/action_started_event.hpp"
+#include "engine/systems/event_system/event/action_performed_event.hpp"
 
 // Key state struct to keep track of the current and previous state of a key
 struct KeyState
 {
     bool current = false;
     bool previous = false;
-}
+};
 
 class InputManager : public EventListener
 {
-    EventBus event_bus;
+    EventBus& event_bus;
     std::unique_ptr<InputMappingContext> input_mapping_context;
 
     std::unordered_map<int, KeyState> key_state;
-
 
     // mouse data
     float last_x = 0.0f;
@@ -53,7 +72,7 @@ class InputManager : public EventListener
         for (const auto& input : inputs)
         {
             const auto key = input.get_input_key();
-
+            
             // Find the key state in the key_state map
             auto it = key_state.find(key);
             if (it == key_state.end())
@@ -74,12 +93,8 @@ class InputManager : public EventListener
 
 public:
 
-    InputManager() : event_bus(nullptr)
-    {
-        // By default, we are in the Editor Mode
-        this->input_mapping_context = std::make_unique<InputMappingContext>(EditorMappingContext());
-        this->input_mapping_context->debug_mapping();
-    }
+    InputManager() = delete;
+
     InputManager(EventBus& bus) : event_bus(bus)
     {
         // By default, we are in the Editor Mode
@@ -106,36 +121,36 @@ public:
     // EventListener implementation
     void on_event(const IEvent& event) override{
         // Check if the event is a KeyPressEvent
-        if (event.get_type() == EventType::KEY_PRESS)
+        if (event.get_type() == EventType::KeyPressed)
         {
             const auto& key_press_event = static_cast<const KeyPressEvent&>(event);
-            const int key = key_press_event.get_key();
-            const bool is_repeat = key_press_event.is_repeat();
+            const int key = key_press_event.get_key_code();
+            const bool is_repeat = key_press_event.get_is_repeat();
 
             // Update the key state
             key_state[key].current = true;
         }
-        else if (event.get_type() == EventType::KEY_RELEASE)
+        else if (event.get_type() == EventType::KeyReleased)
         {
             const auto& key_release_event = static_cast<const KeyReleaseEvent&>(event);
-            const int key = key_release_event.get_key();
+            const int key = key_release_event.get_key_code();
 
             // Update the key state
             key_state[key].current = false;
         }
 
         // Check if the event is a MouseButtonPressEvent
-        else if (event.get_type() == EventType::MOUSE_BUTTON_PRESS)
+        else if (event.get_type() == EventType::MouseButtonPressed)
         {
-            const auto& mouse_button_press_event = static_cast<const MouseButtonPressEvent&>(event);
+            const auto& mouse_button_press_event = static_cast<const MouseButtonPressedEvent&>(event);
             const int button = mouse_button_press_event.get_button();
 
             // Update the key state
             key_state[button].current = true;
         }
-        else if (event.get_type() == EventType::MOUSE_BUTTON_RELEASE)
+        else if (event.get_type() == EventType::MouseButtonReleased)
         {
-            const auto& mouse_button_release_event = static_cast<const MouseButtonReleaseEvent&>(event);
+            const auto& mouse_button_release_event = static_cast<const MouseButtonReleasedEvent&>(event);
             const int button = mouse_button_release_event.get_button();
 
             // Update the key state
@@ -143,15 +158,15 @@ public:
         }
 
         // Check if the event is a MouseMotionEvent
-        else if (event.get_type() == EventType::MOUSE_MOTION)
+        else if (event.get_type() == EventType::MouseMoved)
         {
             const auto& mouse_motion_event = static_cast<const MouseMotionEvent&>(event);
-            const float x_pos = mouse_motion_event.get_x_pos();
-            const float y_pos = mouse_motion_event.get_y_pos();
+            const float x_pos = mouse_motion_event.get_x();
+            const float y_pos = mouse_motion_event.get_y();
 
             // Update the current mouse position
-            current_x_pos = x_pos;
-            current_y_pos = y_pos;
+            float current_x_pos = x_pos;
+            float current_y_pos = y_pos;
 
             // Handle mouse offset event
             if (this->first_movement)
@@ -168,8 +183,8 @@ public:
             last_y = current_y_pos;
 
             // Publish offset event
-            MouseOffsetEvent mouse_offset_event(x_offset, y_offset);
-            this->event_bus.publish_event(mouse_offset_event);
+            MouseDeltaEvent mouse_delta_event(x_offset, y_offset);
+            this->event_bus.publish_event(mouse_delta_event);
         }
 
     }
@@ -203,19 +218,19 @@ public:
             // ActionStarted
             if (currently_active && !previously_active)
             {
-                event_bus.publish_event(ActionStartedEvent(action_id));
+                event_bus.publish_event(ActionStartedEvent(get_action_name(action_id)));
             }
 
             // ActionPerformed
             if (currently_active)
             {
-                event_bus.publish_event(ActionPerformedEvent(action_id));
+                event_bus.publish_event(ActionPerformedEvent(get_action_name(action_id)));
             }
 
             // ActionEnded
             if (!currently_active && previously_active)
             {
-                event_bus.publish_event(ActionEndedEvent(action_id));
+                event_bus.publish_event(ActionEndedEvent(get_action_name(action_id)));
             }
 
         }

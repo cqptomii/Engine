@@ -1,9 +1,10 @@
 #ifndef EVENTBUS_HPP
 #define EVENTBUS_HPP
 
-#include "engine/systems/event_system/event/IEvent.hpp"
+#include "engine/systems/event_system/event/ievent.hpp"
 #include "engine/systems/event_system/event_listener.hpp"
 #include "engine/systems/event_system/event_dispatcher.hpp"
+#include <algorithm>
 #include <vector>
 #include <mutex>
 #include <queue>
@@ -22,7 +23,7 @@ private:
 
     // List of event listeners
     std::vector<EventListenerInfo> listeners_info;
-    std::queue<std::unique_ptr<IEvent> event_queue;
+    std::queue<std::unique_ptr<IEvent>> event_queue;
     std::mutex mutex;
     bool immediate = true;
 public:
@@ -46,11 +47,12 @@ public:
     }
     void remove_listener(EventListener* listener){
         // Find the listener int the list if it exist
-        auto it = std::find(listeners_info.begin(), listeners_info.end(), [listener](const EventListenerInfo& info) {
+        auto it = std::find_if(listeners_info.begin(), listeners_info.end(),
+        [listener](const EventListenerInfo& info) {
             return info.listener == listener;
         });
-        if (it != listeners.end()) {
-            listeners.erase(it);
+        if (it != listeners_info.end()) {
+            listeners_info.erase(it);
         }
     }
 

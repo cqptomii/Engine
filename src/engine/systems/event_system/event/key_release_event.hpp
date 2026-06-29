@@ -1,7 +1,7 @@
 #ifndef KEYRELEASE_EVENT_HPP
 #define KEYRELEASE_EVENT_HPP
 
-#include "engine/systems/event_system/event/IEvent.hpp"
+#include "engine/systems/event_system/event/ievent.hpp"
 
 class KeyReleaseEvent : public IEvent
 {
@@ -14,7 +14,7 @@ public:
 
     int get_key_code() const { return key_code; }
 
-    DEFINE_EVENT_TYPE(KeyReleaseEvent, 
+    DEFINE_EVENT_TYPE(KeyReleased, 
         static_cast<int>(EventCategory::Keyboard) | static_cast<int>(EventCategory::Input)
     )
 };

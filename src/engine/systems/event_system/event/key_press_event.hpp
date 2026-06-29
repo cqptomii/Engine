@@ -1,7 +1,7 @@
 #ifndef KEYPRESS_EVENT_HPP
 #define KEYPRESS_EVENT_HPP
 
-#include "engine/systems/event_system/event/IEvent.hpp"
+#include "engine/systems/event_system/event/ievent.hpp"
 
 class KeyPressEvent : public IEvent
 {
@@ -15,7 +15,7 @@ public:
     int get_key_code() const { return key_code; }
     bool get_is_repeat() const { return is_repeat; }
 
-    DEFINE_EVENT_TYPE(KeyPressEvent, 
+    DEFINE_EVENT_TYPE(KeyPressed, 
         static_cast<int>(EventCategory::Keyboard) | static_cast<int>(EventCategory::Input)
     )
 };
