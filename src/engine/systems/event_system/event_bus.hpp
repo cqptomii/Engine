@@ -65,7 +65,7 @@ public:
             }
         } else {
             std::lock_guard<std::mutex> lock(mutex);
-            event_queue.push(std::make_unique<IEvent>(event));
+            event_queue.push(event.clone());
         }
     }
     void process_events(){

@@ -14,10 +14,10 @@
 
 #include <GLFW/glfw3.h>
 #include <unordered_map>
-#include <memory.h>
+#include <memory>
 #include <utility>
-#include "engine/systems/event_system/event/key_press_event.hpp"
-#include "engine/systems/event_system/event/key_release_event.hpp"
+#include "engine/systems/event_system/event/key_pressed_event.hpp"
+#include "engine/systems/event_system/event/key_released_event.hpp"
 #include "engine/systems/event_system/event/mouse_button_released_event.hpp"
 #include "engine/systems/event_system/event/mouse_button_pressed_event.hpp"
 #include "engine/systems/event_system/event/mouse_motion_event.hpp"
@@ -75,17 +75,17 @@ public:
     {
         if (action == GLFW_PRESS)
         {
-            KeyPressEvent event(key, false);
+            KeyPressedEvent event(key, false);
             this->event_bus.publish_event(event);
         }
         else if (action == GLFW_RELEASE)
         {
-            KeyReleaseEvent event(key);
+            KeyReleasedEvent event(key);
             this->event_bus.publish_event(event);
         }
         else if (action == GLFW_REPEAT)
         {
-            KeyPressEvent event(key, true);
+            KeyPressedEvent event(key, true);
             this->event_bus.publish_event(event);
         }
     }

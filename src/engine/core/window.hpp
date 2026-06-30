@@ -9,7 +9,6 @@
 #include <utility>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include "input/input_manager.hpp"
 #include "engine/systems/input_system.hpp"
 
 class Window
@@ -17,8 +16,11 @@ class Window
     GLFWwindow* window_ptr = nullptr;
 
     std::string window_title;
-    InputSystem input_system;
-
+    
+    /**
+     * @brief 
+     * 
+     */
     void init()
     {
         // Create GLFW Window
@@ -83,17 +85,35 @@ class Window
     }
 
 public:
+
+    // Window size parameters
     int width, height;
 
-
+    /**
+     * @brief Default Window Constructor
+     * 
+     */
     Window() : window_title("Untitled"), width(800), height(600)
     {
         this->init();
     }
+
+    /**
+     * @brief Override Window Constructor
+     * 
+     * @param width  (int): Width size of the window
+     * @param height (int): Height size of the window
+     * @param title (str): Name of the window
+     */
     explicit Window(const int width = 800, const int height = 600, std::string title = "Untitled") : window_title(std::move(title)), width(width), height(height)
     {
         this->init();
     }
+
+    /**
+     * @brief Destructor of the class
+     *  
+     */
     ~Window()
     {
         if (window_ptr != nullptr)
@@ -101,6 +121,13 @@ public:
             glfwDestroyWindow(window_ptr);
         }
     }
+
+    /**
+     * @brief Method that check if the window is still open 
+     * 
+     * @return true : The window is open
+     * @return false : The window is closed
+     */
     bool isOpen() const
     {
         if (glfwWindowShouldClose(this->window_ptr))
@@ -109,6 +136,11 @@ public:
         }
         return true;
     }
+
+    /**
+     * @brief Method to close the window
+     * 
+     */
     void closeWindow() const
     {
         glfwSetWindowShouldClose(this->window_ptr, true);
@@ -118,62 +150,139 @@ public:
     // Function to interact with the window by controllers
     //
 
+    /**
+     * @brief  Method which returned the pressed state of a given key
+     * 
+     * @param key : KeyCode of the key 
+     * @return true : The key is pressed
+     * @return false : the key isn't pressed
+     */
     bool is_key_pressed(const int key) const
     {
         return glfwGetKey(this->window_ptr, key) == GLFW_PRESS;
     }
+
+    /**
+     * @brief  Method which returned the released state of a given key
+     * 
+     * @param key : Keycode of the key
+     * @return true : The key is released
+     * @return false : The key isn't released
+     */
     bool is_key_released(const int key) const
     {
         return glfwGetKey(this->window_ptr, key) == GLFW_RELEASE;
     }
+    
+    /**
+     * @brief Method which check if a given mousebutton is pressed
+     * 
+     * @param button : Code of the button 
+     * @return true : The mouse button is pressed
+     * @return false : The mouse button isn't pressed
+     */
     bool is_mouse_button_pressed(const int button) const
     {
         return glfwGetMouseButton(this->window_ptr, button) == GLFW_PRESS;
     }
 
 
+    /**
+     * @brief Get the window ptr object
+     * 
+     * @return GLFWwindow* : Window pointer object
+     */
     GLFWwindow* get_window_ptr() const noexcept
     {
         return this->window_ptr;
-    }
-    InputSystem& get_input_system()
-    {
-        return this->input_system;
     }
     
     //
     // Callback functions
     //
+
+    /**
+     * @brief Method to set the user pointer of the window
+     * 
+     * @param user_ptr : Pointer to the user data
+     */
     void setUserPointer(void* user_ptr) const
     {
         glfwSetWindowUserPointer(this->window_ptr, user_ptr);
     }
+
+
+    /**
+     * @brief Method to set the window size
+     * 
+     * @param window : Window pointer
+     * @param width : Width of the window
+     * @param height : Height of the window
+     */
     static void window_size_callback(GLFWwindow* window, int width, int height)
     {
         glViewport(0, 0, width, height);
     }
+
+    /**
+     * @brief Method to set the mouse position
+     * 
+     * @param window : Window pointer
+     * @param xpos : X position of the mouse
+     * @param ypos : Y position of the mouse
+     */
     static void mouse_pos_callback(GLFWwindow* window, double xpos, double ypos)
     {
         auto* input_system = static_cast<InputSystem*>(glfwGetWindowUserPointer(window));
         input_system->on_mouse_move(xpos, ypos);
     }
+
+    /**
+     * @brief Method to set the mouse button
+     * 
+     * @param window : Window pointer
+     * @param button : Button code
+     * @param action : Action code
+     * @param mods : Modifier code
+     */
     static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
     {
         auto* input_system = static_cast<InputSystem*>(glfwGetWindowUserPointer(window));
         input_system->on_mouse_button_event(button, action, mods);
     }
+
+    /**
+     * @brief Method to set the scroll
+     * 
+     * @param window : Window pointer
+     * @param xoffset : X offset
+     * @param yoffset : Y offset
+     */
     static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
     {
         auto* input_system = static_cast<InputSystem*>(glfwGetWindowUserPointer(window));
         input_system->on_mouse_scroll(xoffset, yoffset);
     }
+
+    /**
+     * @brief Method to set the key
+     * 
+     * @param window : Window pointer
+     * @param key : Key code
+     * @param scancode : Scancode
+     * @param action : Action code
+     * @param mods : Modifier code
+     */
     static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
     {
         auto* input_system = static_cast<InputSystem*>(glfwGetWindowUserPointer(window));
         input_system->on_key_event(key, scancode, action, mods);
     }
 
-    // Function to update the window buffers and poll events
+    /**
+     * @brief Method which update the buffers of the window and listen events from the controllers
+     * 
+     */
     void update() const
     {
         // Swap window buffer
@@ -183,11 +292,22 @@ public:
     }
 
 
-    static void set_VSync(const int interval)
+    /**
+     * @brief Method to set the VSync
+     * 
+     * @param interval : Interval of the VSync
+     */
+    void set_VSync(const int interval) const
     {
         glfwSwapInterval(interval);
     }
-    static void set_depth_test(const bool enable)
+    
+    /**
+     * @brief Set the depth test in OPENGL
+     * 
+     * @param enable (bool)
+    */
+    void set_depth_test(const bool enable) const
     {
         if (enable)
         {
@@ -198,11 +318,21 @@ public:
             glDisable(GL_DEPTH_TEST);
         }
     }
-    static void disable_blending()
+
+    /**
+     * @brief Method to disable alpha Blending
+     * 
+     */
+    void disable_blending() const
     {
         glDisable(GL_BLEND);
     }
-    static void enable_blending()
+
+    /**
+     * @brief Method to enable alpha blending
+     * 
+     */
+    void enable_blending() const
     {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

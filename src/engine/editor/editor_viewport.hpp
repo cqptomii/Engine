@@ -39,7 +39,7 @@ public:
                 {
                     std::cout << "Move camera" << std::endl;
                     //Update cam position with the mouse movement
-                    const glm::vec3 mouse_delta = {input_manager.get_mouse_offset(),0};
+                    const glm::vec3 mouse_delta = {input_manager.get_mouse_delta(),0};
                     this->editor_camera.process_cam_movement(mouse_delta);
 
                     // Show cam Position
@@ -49,7 +49,7 @@ public:
                 }else if (action_name == "rotate_camera")
                 {
                     std::cout << "Rotate camera" << std::endl;
-                    const glm::vec2 mouse_delta = input_manager.get_mouse_offset();
+                    const glm::vec2 mouse_delta = input_manager.get_mouse_delta();
                     std::cout << mouse_delta.x << " " << mouse_delta.y << std::endl;
                     this->editor_camera.process_cam_rotation(mouse_delta.x, mouse_delta.y, 0);
 
