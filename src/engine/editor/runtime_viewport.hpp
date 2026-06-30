@@ -16,10 +16,9 @@ public:
 	RuntimeViewport() = default;
 	~RuntimeViewport() override = default;
 
-	void update(Scene& scene, InputManager& input_manager) override
+	void update(Scene& scene) override
 	{
 		(void)scene;
-		(void)input_manager;
 	}
 
 	EditorCamera& get_main_camera() override

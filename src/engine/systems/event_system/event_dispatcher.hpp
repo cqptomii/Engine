@@ -16,8 +16,7 @@
 class EventDispatcher
 {
 private:
-    // Event to dispatch to listners
-    IEvent& event;
+    const IEvent& event;
 
 public:
     /**
@@ -25,7 +24,8 @@ public:
      * 
      * @param event The event to dispatch
      */
-    explicit EventDispatcher(IEvent& event) : event(event) {}
+    explicit EventDispatcher(const IEvent& event) : event(event) {
+    }
 
     /**
      * @brief Dispatch the event to the handler if the type matches

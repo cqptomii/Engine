@@ -26,12 +26,17 @@
 
 class Engine
 {
+    // Pointer to the main OpenGL Window
     std::unique_ptr<Window> window_ptr;
 
+    // Main Event Bus object
     EventBus event_bus;
 
+    // Input systems objects
     InputManager input_manager;
     InputSystem input_system;
+
+    // Main Systems objects
     EditorSystem editor_system;
     RenderSystem render_system;
     CpuResourceManager resource_manager;
@@ -133,7 +138,8 @@ public:
      * Set the user pointer for the input system
      * Initialize the default scene
      */
-    Engine() : current_scene(this->resource_manager), event_bus(), 
+    Engine() : current_scene(this->resource_manager), event_bus(),
+    editor_system(event_bus),
     input_manager(event_bus),
     input_system(event_bus),
     resource_manager()
@@ -156,6 +162,7 @@ public:
      */
     explicit Engine(std::unique_ptr<Window> window) : current_scene(this->resource_manager), 
     event_bus(), 
+    editor_system(event_bus),
     input_manager(event_bus),
     input_system(event_bus),
     resource_manager()
@@ -202,6 +209,9 @@ public:
             {
                 this->delta_time = 0.0f;
             }
+            
+            // Window buffer Update
+            this->window_ptr->update();
 
             // Update action from the input manager
             this->input_manager.update();
@@ -214,7 +224,7 @@ public:
             this->window_ptr->disable_blending();
 
             // Update viewports
-            this->editor_system.update(this->current_scene, input_manager);
+            this->editor_system.update(this->current_scene);
 
             int framebuffer_width = 0;
             int framebuffer_height = 0;
@@ -227,11 +237,9 @@ public:
             this->render_system.update(
                 this->current_scene,
                 editor_camera,
-                this->editor_system.get_editor_mode()
+                this->editor_system.get_is_editor_mode()
             );
 
-            // Window buffer Update
-            this->window_ptr->update();
             // Show frame per second
             this->show_frame_rate(this->delta_time);
         }

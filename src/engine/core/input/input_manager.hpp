@@ -23,7 +23,6 @@
 #include "engine/systems/event_system/event_listener.hpp"
 #include "engine/core/input/context/editor_mapping_context.hpp"
 #include "engine/core/input/context/input_mapping_context.hpp"
-#include "engine/core/input/context/input_mapping_context.hpp"
 #include "engine/core/input/context/runtime_mapping_context.hpp"
 #include "engine/systems/event_system/event_bus.hpp"
 
@@ -42,9 +41,9 @@
 #include "engine/systems/event_system/event_types.hpp"
 
 /**
- * @brief KeyState Structure to track the previous and the current state of an Key
+ * @brief Tracks the previous and current state of a keyboard key or mouse button.
  */
-struct KeyState
+struct InputState
 {
     bool current = false;
     bool previous = false;
@@ -59,7 +58,7 @@ class InputManager : public EventListener
     EventBus& event_bus;
     std::unique_ptr<InputMappingContext> input_mapping_context;
 
-    std::unordered_map<int, KeyState> key_state;
+    std::unordered_map<int, InputState> input_state;
 
     // Mouse last position on the screen
     float last_x = 0.0f;
@@ -70,10 +69,39 @@ class InputManager : public EventListener
     float y_offset = 0.0f;
     bool first_movement = true;
 
-    // Scroll offset
-    float scroll_offset = 0.0f;
-
-
+    /**
+     * @brief Check if the action is active
+     * 
+     * @param action_id : Action ID
+     * @param previous : If true, check the previous state of the action
+     * @return bool : True if the action is active, false otherwise
+     */
+     bool is_action_active(uint32_t action_id, bool previous = false) const
+     {
+         // Get the inputs for the action from the mapping context
+         const auto& inputs = this->input_mapping_context->get_input_mapping().at(action_id);
+ 
+         // Check if all the inputs are active
+         for (const auto& input : inputs)
+         {
+             const auto key = input.get_input_key();
+             
+             // Find the key state in the input_state map
+             auto it = input_state.find(key);
+             if (it == input_state.end())
+             {
+                 return false;
+             }
+ 
+             bool state = previous ? it->second.previous : it->second.current;
+             if (!state)
+             {
+                 return false;
+             }
+         }
+ 
+         return true;
+     }
 public:
     /**
      * @brief Delete the default constructor to avoid duplicated bus
@@ -89,7 +117,6 @@ public:
     {
         // By default, we are in the Editor Mode
         this->input_mapping_context = std::make_unique<InputMappingContext>(EditorMappingContext());
-        this->input_mapping_context->debug_mapping();
 
         // Subscribe to the event bus
         this->event_bus.add_listener(this,
@@ -109,12 +136,23 @@ public:
     explicit InputManager(std::unique_ptr<InputMappingContext> input_mapping_context, EventBus& bus) : event_bus(bus)
     {
         this->input_mapping_context = std::move(input_mapping_context);
+
+        // Subscribe to the event bus
+        this->event_bus.add_listener(this,
+            static_cast<int>(EventCategory::MouseButton) | 
+            static_cast<int>(EventCategory::Mouse) | 
+            static_cast<int>(EventCategory::Keyboard) | 
+            static_cast<int>(EventCategory::Input)
+        );
     }
 
     /**
      * @brief Default Destructor of the class
      */
-    ~InputManager() = default;
+    ~InputManager(){
+        // Remove  the input manager from the bus
+        event_bus.remove_listener(this);
+    };
 
     /**
      * @brief Delete the copy constructor to avoid duplicated bus
@@ -140,10 +178,9 @@ public:
         {
             const auto& key_press_event = static_cast<const KeyPressedEvent&>(event);
             const int key = key_press_event.get_key_code();
-            const bool is_repeat = key_press_event.get_is_repeat();
 
-            // Update the key state
-            key_state[key].current = true;
+            // Update the input state (repeat keeps the key held)
+            input_state[key].current = true;
         }
         else if (event.get_type() == EventType::KeyReleased)
         {
@@ -151,7 +188,7 @@ public:
             const int key = key_release_event.get_key_code();
 
             // Update the key state
-            key_state[key].current = false;
+            input_state[key].current = false;
         }
 
         // Check if the event is a MouseButtonPressEvent
@@ -161,7 +198,7 @@ public:
             const int button = mouse_button_press_event.get_button();
 
             // Update the key state
-            key_state[button].current = true;
+            input_state[button].current = true;
         }
         else if (event.get_type() == EventType::MouseButtonReleased)
         {
@@ -169,7 +206,7 @@ public:
             const int button = mouse_button_release_event.get_button();
 
             // Update the key state
-            key_state[button].current = false;
+            input_state[button].current = false;
         }
 
         // Check if the event is a MouseMotionEvent
@@ -201,14 +238,6 @@ public:
             MouseDeltaEvent mouse_delta_event(x_offset, y_offset);
             this->event_bus.publish_event(mouse_delta_event);
         }
-
-        else if( event.get_type() == EventType::MouseScrolled){
-            const auto& mouse_scroll_event = static_cast<const MouseScrollEvent&>(event);
-            const float y_offset = mouse_scroll_event.get_y_offset();
-            
-            // Update the current scroll offset
-            this->scroll_offset = y_offset;
-        }
     }
 
     /**
@@ -232,13 +261,6 @@ public:
      */
     void update()
     {
-        // Update the state of the keys
-        for (auto& [key, state] : key_state)
-        {
-            state.previous = state.current;
-        }
-
-
         // Process each action in the mapping context
         for (auto& [action_id, inputs] : this->input_mapping_context->get_input_mapping())
         {
@@ -263,6 +285,12 @@ public:
                 event_bus.publish_event(ActionEndedEvent(get_action_name(action_id)));
             }
 
+        }
+
+        // Update the state of the keys
+        for (auto& [key, state] : input_state)
+        {
+            state.previous = state.current;
         }
     }
 
@@ -296,58 +324,6 @@ public:
     uint32_t get_action_id(const std::string& action_name) const
     {
         return this->input_mapping_context->get_action_id(action_name);
-    }
-
-    /**
-     * @brief Check if the action is active
-     * 
-     * @param action_id : Action ID
-     * @param previous : If true, check the previous state of the action
-     * @return bool : True if the action is active, false otherwise
-     */
-    bool is_action_active(uint32_t action_id, bool previous = false) const
-    {
-        // Get the inputs for the action from the mapping context
-        const auto& inputs = this->input_mapping_context->get_input_mapping().at(action_id);
-
-        // Check if all the inputs are active
-        for (const auto& input : inputs)
-        {
-            const auto key = input.get_input_key();
-            
-            // Find the key state in the key_state map
-            auto it = key_state.find(key);
-            if (it == key_state.end())
-            {
-                return false;
-            }
-
-            bool state = previous ? it->second.previous : it->second.current;
-            if (!state)
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * @brief Get the mouse delta vector
-     * 
-     * @return glm::vec2 : Mouse delta vector
-     */
-    glm::vec2 get_mouse_delta() const{
-        return {x_offset, y_offset};
-    }
-
-    /**
-     * @brief Get the scroll delta value
-     * 
-     * @return float : Scroll delta
-     */
-    float get_scroll_delta() const{
-        return scroll_offset;
     }
 };
 

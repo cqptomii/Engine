@@ -6,6 +6,7 @@
 #define EDITOR_CAMERA_HPP
 
 #define GLM_ENABLE_EXPERIMENTAL
+#include <iostream>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -168,6 +169,14 @@ public:
         if (cam_distance > 100.0f) cam_distance = 100.0f;
 
         this->update_cam_parameters();
+    }
+
+    /**
+     * @brief Method to reset the camera to his original position on the screen
+     * 
+     */
+    void reset(){
+
     }
 
     void debug_cam()

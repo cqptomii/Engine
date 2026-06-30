@@ -5,14 +5,13 @@
 #ifndef ENGINE_IVIEWPORT_HPP
 #define ENGINE_IVIEWPORT_HPP
 
-#include "../src/engine/core/input/input_manager.hpp"
-#include "../src/engine/scene/Scene.hpp"
-
+#include "engine/scene/Scene.hpp"
+#include "engine/editor/editor_camera.hpp"
 class IViewport
 {
 public:
     virtual ~IViewport() = default;
-    virtual void update(Scene& scene, InputManager& input_manager) = 0;
+    virtual void update(Scene& scene) = 0;
     virtual EditorCamera& get_main_camera() = 0;
 };
 

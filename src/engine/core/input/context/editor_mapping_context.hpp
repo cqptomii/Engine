@@ -6,6 +6,7 @@
 #define ENGINE_EDITOR_MAPPING_CONTEXT_HPP
 
 #include "engine/core/input/context/input_mapping_context.hpp"
+#include "engine/core/input/input.hpp"
 #include <GLFW/glfw3.h>
 
 class EditorMappingContext : public InputMappingContext
@@ -22,6 +23,7 @@ public:
             Input(GLFW_MOUSE_BUTTON_MIDDLE, MOUSE)
         });
         this->register_input_mapping("reset_camera", {
+            Input(GLFW_KEY_LEFT_ALT, KEYBOARD),
             Input(GLFW_KEY_R, KEYBOARD)
         });
 

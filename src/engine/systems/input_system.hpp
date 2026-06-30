@@ -22,6 +22,7 @@
 #include "engine/systems/event_system/event/mouse_button_pressed_event.hpp"
 #include "engine/systems/event_system/event/mouse_motion_event.hpp"
 #include "engine/systems/event_system/event/mouse_scroll_event.hpp"
+#include "engine/systems/event_system/event/window_resize_event.hpp"
 #include "engine/systems/event_system/event_bus.hpp"
 
 
@@ -64,12 +65,12 @@ public:
     InputSystem& operator=(const InputSystem&) = delete;
 
     /**
-     * @brief  
+     * @brief  Method use to handle the key event
      * 
-     * @param key 
-     * @param scancode 
-     * @param action 
-     * @param mods 
+     * @param key (int) : Key code
+     * @param scancode (int) : Scancode
+     * @param action (int) : Action code
+     * @param mods (int) : Modifier code
      */
     void on_key_event(int key, int scancode, int action, int mods)
     {
@@ -91,11 +92,11 @@ public:
     }
 
     /**
-     * @brief 
+     * @brief Method use to handle the mouse button event
      * 
-     * @param button 
-     * @param action 
-     * @param mods 
+     * @param button (int) : Button number
+     * @param action (int) : Action code
+     * @param mods (int) : Modifier code
      */
     void on_mouse_button_event(int button, int action, int mods)
     {
@@ -113,10 +114,10 @@ public:
     }
 
     /**
-     * @brief 
+     * @brief Method use to handle the mouse scroll
      * 
-     * @param xoffset 
-     * @param yoffset 
+     * @param xoffset (double) : Horizontal offset of the mouse scroll  
+     * @param yoffset (double) : Vertical offset of the mouse scroll
      */
     void on_mouse_scroll(double xoffset, double yoffset)
     {
@@ -125,10 +126,10 @@ public:
     }
 
     /**
-     * @brief 
+     * @brief Method use to handle the mouse movement
      * 
-     * @param x_pos 
-     * @param y_pos 
+     * @param x_pos (double) : Horizontal position of the mouse cursor
+     * @param y_pos (double) : Vertical position of the mouse cursor
      */
     void on_mouse_move(const double x_pos, const double y_pos)
     {
@@ -136,6 +137,19 @@ public:
         const auto current_y_pos = static_cast<float>(y_pos);
 
         MouseMotionEvent event(current_x_pos, current_y_pos);
+        this->event_bus.publish_event(event);
+    }
+
+    /**
+     * @brief  Method use to resize the screen
+     * 
+     * @param width (int) : Horizontal size of the screen
+     * @param height (int) : Vertical size of the screen
+     */
+    void on_window_resize(const int width, const int height)
+    {
+        glViewport(0, 0, width, height);
+        WindowResizeEvent event(width, height);
         this->event_bus.publish_event(event);
     }
 };

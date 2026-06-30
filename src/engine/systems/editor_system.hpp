@@ -1,6 +1,13 @@
-//
-// Created by tomfr on 12/03/2026.
-//
+/**
+ * @file editor_system.hpp
+ * @author Tom FRAISSE
+ * @brief 
+ * @version 0.1
+ * @date 2026-03-12
+ * 
+ * @copyright Copyright (c) 2026
+ * 
+ */
 
 #ifndef ENGINE_EDITOR_SYSTEM_HPP
 #define ENGINE_EDITOR_SYSTEM_HPP
@@ -9,7 +16,7 @@
 #include "engine/editor/runtime_viewport.hpp"
 #include "engine/editor/iviewport.hpp"
 #include "engine/scene/Scene.hpp"
-#include "engine/core/input/input_manager.hpp"
+#include "engine/systems/event_system/event_bus.hpp"
 
 class EditorSystem
 {
@@ -20,21 +27,46 @@ class EditorSystem
     std::unique_ptr<EditorViewport> editor_viewport;
     std::unique_ptr<RuntimeViewport> runtime_viewport;
 
+    // EventBus object
+    EventBus& event_bus;
+
 
     bool is_editor_mode = true;
 public:
-    EditorSystem()
+    
+    /**
+     * @brief Delete the default constructor to avoid eventBus duplication
+     * 
+     */
+    EditorSystem() = delete;
+
+    /**
+     * @brief Construct a new Editor System object
+     * 
+     * @param bus 
+     */
+    EditorSystem(EventBus& bus) : event_bus(bus)
     {
         this->is_editor_mode = true;
-        this->editor_viewport = std::make_unique<EditorViewport>();
+        this->editor_viewport = std::make_unique<EditorViewport>(bus);
         this->runtime_viewport = std::make_unique<RuntimeViewport>();
         this->current_viewport = this->editor_viewport.get();
     }
-    void update(Scene& scene, InputManager& input_manager)
+
+    /**
+     * @brief 
+     * 
+     * @param scene 
+     */
+    void update(Scene& scene)
     {
-        this->current_viewport->update(scene, input_manager);
+        this->current_viewport->update(scene);
     }
 
+    /**
+     * @brief Method to toggle / un toggle the editor mode
+     * 
+     */
     void toggle_editor_mode()
     {
         this->is_editor_mode = !this->is_editor_mode;
@@ -49,11 +81,23 @@ public:
             this->current_viewport = this->runtime_viewport.get();
         }
     }
-    bool get_editor_mode() const
+
+    /**
+     * @brief Get the status of the editor system
+     * 
+     * @return true : We are in editor mode
+     * @return false : We aren't in editor mode
+     */
+    bool get_is_editor_mode() const
     {
         return this->is_editor_mode;
     }
 
+    /**
+     * @brief Get the main camera object
+     * 
+     * @return EditorCamera& : Editor Camera object
+     */
     EditorCamera& get_main_camera()
     {
         return this->current_viewport->get_main_camera();

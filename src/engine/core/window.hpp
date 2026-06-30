@@ -1,6 +1,10 @@
-//
-// Created by tomfr on 03/03/2026.
-//
+/**
+ * @file window.hpp
+ * @author Tom Fraisse
+ * @brief Header file for the Window class
+ * @version 0.1
+ * @date 2026-03-03
+ */
 
 #ifndef WINDOW_HPP
 #define WINDOW_HPP
@@ -18,32 +22,39 @@ class Window
     std::string window_title;
     
     /**
-     * @brief 
+     * @brief Method to initialize the window
      * 
      */
-    void init()
+    void init() noexcept
     {
         // Create GLFW Window
         this->window_ptr = glfwCreateWindow(this->width, this->height, this->window_title.c_str(), nullptr, nullptr);
         if (!this->window_ptr)
         {
+            // Get the error description
             const char* error_desc = nullptr;
+            // Get the error code
             const int error_code = glfwGetError(&error_desc);
+            // Print the error
             std::cerr << "Failed to create GLFW window with OpenGL 3.3 core"
                       << " (error " << error_code << ": "
                       << (error_desc ? error_desc : "unknown") << ")"
                       << std::endl;
 
-            // Fallback: relax profile/version requirements for older drivers.
+            // Fallback: relax profile/version requirements for older drivers
             glfwDefaultWindowHints();
             glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
             glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 
+            // Create GLFW Window with the fallback settings
             this->window_ptr = glfwCreateWindow(this->width, this->height, this->window_title.c_str(), nullptr, nullptr);
             if (!this->window_ptr)
             {
+                // Get the error description
                 const char* fallback_desc = nullptr;
+                // Get the error code
                 const int fallback_code = glfwGetError(&fallback_desc);
+                // Print the error
                 std::cerr << "Fallback context creation also failed"
                           << " (error " << fallback_code << ": "
                           << (fallback_desc ? fallback_desc : "unknown") << ")"
@@ -221,7 +232,8 @@ public:
      */
     static void window_size_callback(GLFWwindow* window, int width, int height)
     {
-        glViewport(0, 0, width, height);
+        auto* input_system = static_cast<InputSystem*>(glfwGetWindowUserPointer(window));
+        input_system->on_window_resize(width, height);
     }
 
     /**
