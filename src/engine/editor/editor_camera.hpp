@@ -28,15 +28,18 @@ class EditorCamera
     float near_plane = 0.1f;
     float far_plane = 500.0f;
     float aspect_ratio = 16./9.;
-    bool first_move = false;
 
     // Camera movement parameters
-    float cam_sensitivity = 0.1f;
-    float cam_velocity = 2.5f;
+    float cam_rotate_sensitivity = 0.25f;
+    float cam_move_sensitivity    = 0.002f; 
+    float cam_zoom_sensitivity   = 0.1f;
+
+    // Field of view config
     float cam_fov = 45.0f;
+
+    // Orientation Angle configuration
     float cam_yaw;
     float cam_pitch;
-    float cam_roll;
 
     // Camera center point
     glm::vec3 cam_target = glm::vec3(0.0f, 0.0f, 0.0f);
@@ -77,7 +80,7 @@ public:
      * @param position Position of the camera
      * @param direction Direction of the camera
      */
-    EditorCamera() : cam_yaw(-90.), cam_pitch(0.), cam_roll(0.), cam_up(), cam_right()
+    EditorCamera() : cam_yaw(-45.), cam_pitch(0.), cam_up(), cam_right()
     {
         this->update_cam_parameters();
     }
@@ -87,7 +90,7 @@ public:
      * @param position Position of the camera
      * @param direction Direction of the camera
      */
-    EditorCamera(glm::vec3 initial_position, glm::vec3 direction) : cam_initial_position(initial_position), cam_position(initial_position), cam_direction(direction), cam_yaw(-90.), cam_pitch(0.), cam_roll(0.), cam_up(), cam_right()
+    EditorCamera(glm::vec3 initial_position, glm::vec3 direction) : cam_initial_position(initial_position), cam_position(initial_position), cam_direction(direction), cam_yaw(-45.), cam_pitch(0.), cam_up(), cam_right()
     {
         this->update_cam_parameters();
     }
@@ -193,7 +196,7 @@ public:
      */
     void process_cam_movement(const CameraMovement direction, const float delta_time)
     {
-        const float speed = this->cam_sensitivity * delta_time;
+        const float speed = this->cam_move_sensitivity * delta_time;
 
         const glm::vec3 forward = glm::normalize(this->cam_direction);
 
@@ -226,22 +229,13 @@ public:
      * @details The method processes the camera movement in the world coordinates
      * @param direction (glm::vec3) : Movement vector in screen space
      */
-    void process_cam_movement(const glm::vec3& screen_direction)
+    void process_cam_movement(float dx, float dy)
     {
-        // process horizontal cam movement
-        if(screen_direction.x > 0){
-            this->cam_target += this->cam_right * this->cam_sensitivity;
-        }else if(screen_direction.x < 0){
-            this->cam_target -= this->cam_right * this->cam_sensitivity;
-        }
+        // Move Speed proportional to the target distance
+        const float pan_speed = this->cam_distance * this->cam_move_sensitivity;
 
-        // process vertical cam movement
-        if(screen_direction.y > 0){
-            this->cam_target += this->cam_up * this->cam_sensitivity;
-        }else if(screen_direction.y < 0){
-            this->cam_target += this->cam_up * this->cam_sensitivity;
-        }
-
+        this->cam_target += (-this->cam_right * dx + this->cam_up * dy) * pan_speed;
+        
         this->update_cam_parameters();
     }
     
@@ -255,9 +249,8 @@ public:
      */
     void process_cam_rotation(const float x_offset, const float y_offset, const float z_offset, GLboolean constrainPitch = true)
     {
-        this->cam_yaw += x_offset * this->cam_sensitivity;
-        this->cam_pitch += y_offset * this->cam_sensitivity;
-        this->cam_roll += z_offset * this->cam_sensitivity;
+        this->cam_yaw += x_offset * this->cam_rotate_sensitivity;
+        this->cam_pitch += y_offset * this->cam_rotate_sensitivity;
 
         if (constrainPitch)
         {
@@ -281,9 +274,11 @@ public:
      */
     void process_cam_zoom(const float y_offset)
     {
-        cam_distance -= y_offset * 5*this->cam_sensitivity;
-        if (this->cam_distance < 1.0f) this->cam_distance = 1.0f;
-        if (cam_distance > 100.0f) cam_distance = 100.0f;
+        // Update the distance from the target
+        this->cam_distance *= (1.0f - y_offset * this->cam_zoom_sensitivity);
+
+        // Clamp the distance
+        this->cam_distance = glm::clamp(this->cam_distance, 0.05f, 100.0f);
 
         this->update_cam_parameters();
     }
@@ -294,6 +289,18 @@ public:
      */
     void reset(){
 
+        // Reset the target point
+        this->cam_target   = glm::vec3(0.0f);
+        
+        // Reset Orientation
+        this->cam_yaw      = -45.0f;
+        this->cam_pitch    = 0.0f;
+
+        // Reset the cam distance
+        this->cam_distance = 5.0f;
+
+        // Recalculate the cam parameters
+        this->update_cam_parameters();
     }
 
     /**
