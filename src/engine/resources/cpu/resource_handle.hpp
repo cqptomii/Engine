@@ -96,8 +96,8 @@ public:
      * 
      * @return uint32_t  ressource handle id
      */
-    uint32_t get_id(){
-        return this->m_id;
+    uint32_t get_id() const{
+        return m_id;
     }
 };
 
