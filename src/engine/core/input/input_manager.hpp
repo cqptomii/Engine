@@ -78,9 +78,12 @@ class InputManager : public EventListener
      */
      bool is_action_active(uint32_t action_id, bool previous = false) const
      {
-         // Get the inputs for the action from the mapping context
-         const auto& inputs = this->input_mapping_context->get_input_mapping().at(action_id);
- 
+        // Get the inputs for the action from the mapping context
+        const auto& inputs = this->input_mapping_context->get_input_mapping().at(action_id);
+        
+        // Checks if there is no inputs
+        if( inputs.empty()) return false;
+         
          // Check if all the inputs are active
          for (const auto& input : inputs)
          {
@@ -266,6 +269,25 @@ public:
         {
             bool currently_active = this->is_action_active(action_id);
             bool previously_active = this->is_action_active(action_id, true);
+            
+            // Event Exclusivity Check
+            for (auto& [other_action_id, other_inputs] : this->input_mapping_context->get_input_mapping()){
+                if (action_id == other_action_id) continue;
+
+                // IF other_action is active and other_action inputs fit in action_id inputs -> desactivate other_action
+                if (this->is_action_active(other_action_id) && other_inputs.size() <= inputs.size()){
+                    // Check if all the other_action inputs are in action_id inputs
+                    for (const auto& other_input : other_inputs){
+                        if (!std::any_of(inputs.begin(), inputs.end(), [&](const auto& input){
+                            return input.get_input_key() == other_input.get_input_key();
+                        }))
+                        {
+                            event_bus.publish_event(ActionEndedEvent(get_action_name(other_action_id)));
+                        }
+                        return;
+                    }
+                }
+            }
 
             // ActionStarted
             if (currently_active && !previously_active)
@@ -324,6 +346,45 @@ public:
     uint32_t get_action_id(const std::string& action_name) const
     {
         return this->input_mapping_context->get_action_id(action_name);
+    }
+
+    /**
+     * @brief Check if the key is held
+     * 
+     * @param key : Key code
+     * @return true : If the key is held
+     * @return false : If the key is not held
+     */
+    bool is_held(int key) const
+    {
+        auto it = input_state.find(key);
+        return it != input_state.end() && it->second.current;
+    }
+
+    /**
+     * @brief Check if the key is pressed
+     * 
+     * @param key : Key code
+     * @return true : If the key is pressed
+     * @return false : If the key is not pressed (e.g. the key was released last frame)
+     */
+    bool is_pressed(int key) const
+    {
+        auto it = input_state.find(key);
+        return it != input_state.end() && it->second.current && !it->second.previous;
+    }
+
+    /**
+     * @brief Check if the key is released
+     * 
+     * @param key : Key code
+     * @return true : If the key is released
+     * @return false : If the key is not released (e.g. the key was pressed this frame)
+     */
+    bool is_released(int key) const
+    {
+        auto it = input_state.find(key);
+        return it != input_state.end() && !it->second.current && it->second.previous;
     }
 };
 

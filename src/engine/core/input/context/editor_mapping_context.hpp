@@ -22,16 +22,16 @@ public:
 
         // Camera Translation mappings with keyboard
         this->register_input_mapping("camera_move_left", {
-
+            Input(GLFW_KEY_LEFT, KEYBOARD)
         });
         this->register_input_mapping("camera_move_right", {
-
+            Input(GLFW_KEY_RIGHT, KEYBOARD)
         });
         this->register_input_mapping("camera_move_top", {
-
+            Input(GLFW_KEY_UP, KEYBOARD)
         });
         this->register_input_mapping("camera_move_bottom", {
-
+            Input(GLFW_KEY_DOWN, KEYBOARD)
         });
         
         // Camera rotation mapping

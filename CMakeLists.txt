@@ -59,6 +59,9 @@ add_executable(Engine
         src/engine/core/engine.hpp
         src/engine/core/window.hpp
 
+        ## Core Camera
+        src/engine/core/camera_movement.hpp
+
         ## Input system
         src/engine/core/input/input.hpp
         src/engine/core/input/input_manager.hpp
@@ -74,8 +77,8 @@ add_executable(Engine
         src/engine/systems/event_system/event_dispatcher.hpp
         src/engine/systems/event_system/event_bus.hpp
         src/engine/systems/event_system/event/ievent.hpp
-        src/engine/systems/event_system/event/key_press_event.hpp
-        src/engine/systems/event_system/event/key_release_event.hpp
+        src/engine/systems/event_system/event/key_pressed_event.hpp
+        src/engine/systems/event_system/event/key_released_event.hpp
         src/engine/systems/event_system/event/mouse_motion_event.hpp
         src/engine/systems/event_system/event/mouse_scroll_event.hpp
         src/engine/systems/event_system/event/mouse_delta_event.hpp
