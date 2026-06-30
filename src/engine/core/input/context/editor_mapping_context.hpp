@@ -14,14 +14,32 @@ class EditorMappingContext : public InputMappingContext
 public:
     EditorMappingContext()
     {
-        // Camera movement
-        this->register_input_mapping("move_camera", {
+        // Camera Translation mappings with mouse
+        this->register_input_mapping("camera_vector_move", {
             Input(GLFW_KEY_LEFT_SHIFT, KEYBOARD), 
             Input(GLFW_MOUSE_BUTTON_MIDDLE, MOUSE)
         });
+
+        // Camera Translation mappings with keyboard
+        this->register_input_mapping("camera_move_left", {
+
+        });
+        this->register_input_mapping("camera_move_right", {
+
+        });
+        this->register_input_mapping("camera_move_top", {
+
+        });
+        this->register_input_mapping("camera_move_bottom", {
+
+        });
+        
+        // Camera rotation mapping
         this->register_input_mapping("rotate_camera", {
             Input(GLFW_MOUSE_BUTTON_MIDDLE, MOUSE)
         });
+
+        // Camera reset mapping
         this->register_input_mapping("reset_camera", {
             Input(GLFW_KEY_LEFT_ALT, KEYBOARD),
             Input(GLFW_KEY_R, KEYBOARD)
