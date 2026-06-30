@@ -12,7 +12,7 @@
 #ifndef IEVENT_HPP
 #define IEVENT_HPP
 
-#include "engine/systems/event_system/event_category.hpp"
+#include <memory>
 #include "engine/systems/event_system/event_types.hpp"
 
 class IEvent
@@ -35,12 +35,24 @@ public:
     // Return the categories that belong to the event
     virtual int get_category_flags() const = 0;
 
+    /**
+     * @brief Clone the event
+     * @details The clone is used to create a new event of the same type and category
+     * @return A new event of the same type and category
+     */
+    virtual std::unique_ptr<IEvent> clone() const = 0; 
+
+
 };
 
 // Macro to help define event types
-#define DEFINE_EVENT_TYPE(event_type, categories) \
+#define DEFINE_EVENT(Class, event_type, categories) \
+    static EventType get_static_type() { return EventType::event_type; } \
     EventType get_type() const override { return EventType::event_type; } \
-    int get_category_flags() const override { return categories; }
+    int get_category_flags() const override { return categories; } \
+    std::unique_ptr<IEvent> clone() const override { \
+        return std::make_unique<Class>(*this); \
+    }
 
 
 #endif // IEVENT_HPP
