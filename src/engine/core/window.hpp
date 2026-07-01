@@ -233,6 +233,10 @@ public:
     static void window_size_callback(GLFWwindow* window, int width, int height)
     {
         auto* input_system = static_cast<InputSystem*>(glfwGetWindowUserPointer(window));
+        
+        // Check if the input system is valid
+        if(!input_system) return;
+
         input_system->on_window_resize(width, height);
     }
 
@@ -246,6 +250,9 @@ public:
     static void mouse_pos_callback(GLFWwindow* window, double xpos, double ypos)
     {
         auto* input_system = static_cast<InputSystem*>(glfwGetWindowUserPointer(window));
+        // Check if the input system is valid
+        if(!input_system) return;
+
         input_system->on_mouse_move(xpos, ypos);
     }
 
@@ -260,6 +267,9 @@ public:
     static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
     {
         auto* input_system = static_cast<InputSystem*>(glfwGetWindowUserPointer(window));
+        // Check if the input system is valid
+        if(!input_system) return;
+
         input_system->on_mouse_button_event(button, action, mods);
     }
 
@@ -273,6 +283,9 @@ public:
     static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
     {
         auto* input_system = static_cast<InputSystem*>(glfwGetWindowUserPointer(window));
+        // Check if the input system is valid
+        if(!input_system) return;
+
         input_system->on_mouse_scroll(xoffset, yoffset);
     }
 
@@ -288,19 +301,28 @@ public:
     static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
     {
         auto* input_system = static_cast<InputSystem*>(glfwGetWindowUserPointer(window));
+        // Check if the input system is valid
+        if(!input_system) return;
+
         input_system->on_key_event(key, scancode, action, mods);
     }
 
     /**
-     * @brief Method which update the buffers of the window and listen events from the controllers
+     * @brief Poll for and process events
      * 
      */
-    void update() const
+    void poll_events() const
     {
-        // Swap window buffer
-        glfwSwapBuffers(this->window_ptr);
-        // Poll for and process events
         glfwPollEvents();
+    }
+
+    /**
+     * @brief Swap the framebuffers
+     * 
+     */
+    void swap_buffers() const
+    {
+        glfwSwapBuffers(this->window_ptr);
     }
 
 

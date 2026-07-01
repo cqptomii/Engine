@@ -194,9 +194,9 @@ public:
      * @param direction Direction of the movement
      * @param delta_time Delta time
      */
-    void process_cam_movement(const CameraMovement direction, const float delta_time)
+    void process_cam_movement(const CameraMovement direction)
     {
-        const float speed = this->cam_move_sensitivity * delta_time;
+        const float speed = this->cam_distance * this->cam_move_sensitivity ;
 
         const glm::vec3 forward = glm::normalize(this->cam_direction);
 

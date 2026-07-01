@@ -27,6 +27,7 @@
 #include "engine/systems/event_system/event/action_ended_event.hpp"
 #include "engine/systems/event_system/event/mouse_delta_event.hpp"
 #include "engine/systems/event_system/event/mouse_scroll_event.hpp"
+#include "engine/core/input/input_manager.hpp"
 
 
 class EditorViewport : public IViewport, public EventListener{
@@ -38,6 +39,9 @@ class EditorViewport : public IViewport, public EventListener{
     bool verbose = false;
 
     EventBus& event_bus;
+
+    // Input Manager Object
+    InputManager& input_manager;
 
     // Active actions
     std::unordered_set<std::string> active_actions;
@@ -53,8 +57,9 @@ public:
      * @brief Construct a new Editor Viewport object
      * 
      * @param bus (EventBus&) : EventBus reference
+     * @param input_manager (InputManager&) : InputManager reference
      */
-    EditorViewport(EventBus& bus) : editor_camera(EditorCamera()), event_bus(bus)
+    EditorViewport(EventBus& bus, InputManager& input_manager) : editor_camera(EditorCamera()), event_bus(bus), input_manager(input_manager)    
     {
         // Show cam Position
         this->editor_camera.debug_cam();
@@ -69,9 +74,10 @@ public:
      * @brief Construct a new Editor Viewport object
      * 
      * @param bus (EventBus&) : EventBus reference
+     * @param input_manager (InputManager&) : InputManager reference
      * @param camera (EditorCamera&) : EditorCamera reference
      */
-    explicit EditorViewport(EventBus& bus, const EditorCamera& camera) : editor_camera(camera), event_bus(bus){
+    explicit EditorViewport(EventBus& bus, InputManager& input_manager, const EditorCamera& camera) : editor_camera(camera), event_bus(bus), input_manager(input_manager){
         // Show cam Position
         this->editor_camera.debug_cam();
 
@@ -106,22 +112,6 @@ public:
             if (e.get_action_name() == "reset_camera") {
                 editor_camera.reset();
             }
-
-            // Move the camera with the Keyboard Mappings
-            // Move the camera with the Keyboard Mappings
-            if (e.get_action_name() == "camera_move_left"){
-                editor_camera.process_cam_movement(CameraMovement::LEFT, 1.0f);
-            }
-            if (e.get_action_name() == "camera_move_right"){
-                editor_camera.process_cam_movement(CameraMovement::RIGHT, 1.0f);
-            }
-            if (e.get_action_name() == "camera_move_top"){
-                editor_camera.process_cam_movement(CameraMovement::TOP, 1.0f);
-            }
-            if (e.get_action_name() == "camera_move_bottom"){
-                editor_camera.process_cam_movement(CameraMovement::BOTTOM, 1.0f);
-            }
-
         });
 
         // Process each ActionPerformed listened bu the EditorViewport
@@ -130,16 +120,16 @@ public:
             
             // Move the camera with the Keyboard Mappings
             if (e.get_action_name() == "camera_move_left"){
-                editor_camera.process_cam_movement(CameraMovement::LEFT, 1.0f);
+                editor_camera.process_cam_movement(CameraMovement::LEFT);
             }
             if (e.get_action_name() == "camera_move_right"){
-                editor_camera.process_cam_movement(CameraMovement::RIGHT, 1.0f);
+                editor_camera.process_cam_movement(CameraMovement::RIGHT);
             }
             if (e.get_action_name() == "camera_move_top"){
-                editor_camera.process_cam_movement(CameraMovement::TOP, 1.0f);
+                editor_camera.process_cam_movement(CameraMovement::TOP);
             }
             if (e.get_action_name() == "camera_move_bottom"){
-                editor_camera.process_cam_movement(CameraMovement::BOTTOM, 1.0f);
+                editor_camera.process_cam_movement(CameraMovement::BOTTOM);
             }
         });
 

@@ -209,9 +209,9 @@ public:
             {
                 this->delta_time = 0.0f;
             }
-            
-            // Window buffer Update
-            this->window_ptr->update();
+
+            // Poll for and process events
+            this->window_ptr->poll_events();
 
             // Update action from the input manager
             this->input_manager.update();
@@ -239,6 +239,9 @@ public:
                 editor_camera,
                 this->editor_system.get_is_editor_mode()
             );
+
+            // Swap the framebuffers
+            this->window_ptr->swap_buffers();
 
             // Show frame per second
             this->show_frame_rate(this->delta_time);

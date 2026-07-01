@@ -221,6 +221,55 @@ class InputManager : public EventListener
             && !this->is_action_suppressed(action_id, raw_active_previous);
     }
 
+    /**
+     * @brief Publish the mouse delta event if the offset is not zero
+     * 
+     * @param x_offset : X offset
+     * @param y_offset : Y offset
+     */
+    void publish_mouse_delta_event(const float x_offset, const float y_offset) const{
+        if (x_offset != 0.f || y_offset != 0.f)
+        {
+            MouseDeltaEvent mouse_delta_event(x_offset, y_offset);
+            this->event_bus.publish_event(mouse_delta_event);
+        }
+    }
+
+    /**
+     * @brief Publish the action events if the action is effectively active or not
+     * 
+     */
+    void publish_action_event() const{
+        const std::vector<uint32_t> raw_active = this->collect_active_actions();
+        const std::vector<uint32_t> raw_active_previous = this->collect_active_actions(true);
+
+        for (const auto& [action_id, inputs] : this->input_mapping_context->get_input_mapping())
+        {
+            if (inputs.empty())
+            {
+                continue;
+            }
+
+            const bool effectively_active = this->is_effectively_active(action_id, raw_active);
+            const bool effectively_active_previous = this->was_effectively_active(action_id, raw_active_previous);
+
+            if (effectively_active && !effectively_active_previous)
+            {
+                this->event_bus.publish_event(ActionStartedEvent(get_action_name(action_id)));
+            }
+
+            if (effectively_active)
+            {
+                this->event_bus.publish_event(ActionPerformedEvent(get_action_name(action_id)));
+            }
+
+            if (!effectively_active && effectively_active_previous)
+            {
+                this->event_bus.publish_event(ActionEndedEvent(get_action_name(action_id)));
+            }
+        }
+    }
+
 public:
     /**
      * @brief Delete the default constructor to avoid duplicated bus
@@ -352,10 +401,6 @@ public:
 
             last_x = current_x_pos;
             last_y = current_y_pos;
-
-            // Publish offset event
-            MouseDeltaEvent mouse_delta_event(x_offset, y_offset);
-            this->event_bus.publish_event(mouse_delta_event);
         }
     }
 
@@ -382,39 +427,19 @@ public:
      */
     void update()
     {
-        const std::vector<uint32_t> raw_active = this->collect_active_actions();
-        const std::vector<uint32_t> raw_active_previous = this->collect_active_actions(true);
+        // Publish action event
+        this->publish_action_event();
 
-        for (const auto& [action_id, inputs] : this->input_mapping_context->get_input_mapping())
-        {
-            if (inputs.empty())
-            {
-                continue;
-            }
-
-            const bool effectively_active = this->is_effectively_active(action_id, raw_active);
-            const bool effectively_active_previous = this->was_effectively_active(action_id, raw_active_previous);
-
-            if (effectively_active && !effectively_active_previous)
-            {
-                event_bus.publish_event(ActionStartedEvent(get_action_name(action_id)));
-            }
-
-            if (effectively_active)
-            {
-                event_bus.publish_event(ActionPerformedEvent(get_action_name(action_id)));
-            }
-
-            if (!effectively_active && effectively_active_previous)
-            {
-                event_bus.publish_event(ActionEndedEvent(get_action_name(action_id)));
-            }
-        }
+        // Publish mouse delta event
+        this->publish_mouse_delta_event(x_offset, y_offset);
 
         for (auto& [key, state] : input_state)
         {
             state.previous = state.current;
         }
+
+        x_offset = 0.f;
+        y_offset = 0.f;
     }
 
     /**

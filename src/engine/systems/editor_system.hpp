@@ -17,6 +17,7 @@
 #include "engine/editor/iviewport.hpp"
 #include "engine/scene/Scene.hpp"
 #include "engine/systems/event_system/event_bus.hpp"
+#include "engine/core/input/input_manager.hpp"
 
 class EditorSystem
 {
@@ -30,6 +31,8 @@ class EditorSystem
     // EventBus object
     EventBus& event_bus;
 
+    // Input Manager Object
+    InputManager& input_manager;
 
     bool is_editor_mode = true;
 public:
@@ -43,20 +46,21 @@ public:
     /**
      * @brief Construct a new Editor System object
      * 
-     * @param bus 
+     * @param bus (EventBus&) : EventBus reference
+     * @param input_manager (InputManager&) : InputManager reference
      */
-    EditorSystem(EventBus& bus) : event_bus(bus)
+    EditorSystem(EventBus& bus, InputManager& input_manager) : event_bus(bus), input_manager(input_manager)
     {
         this->is_editor_mode = true;
-        this->editor_viewport = std::make_unique<EditorViewport>(bus);
+        this->editor_viewport = std::make_unique<EditorViewport>(bus, input_manager);
         this->runtime_viewport = std::make_unique<RuntimeViewport>();
         this->current_viewport = this->editor_viewport.get();
     }
 
     /**
-     * @brief 
+     * @brief Update the editor system
      * 
-     * @param scene 
+     * @param scene (Scene&) : Scene reference to update
      */
     void update(Scene& scene)
     {
