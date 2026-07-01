@@ -15,10 +15,12 @@
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 
-#include <string>
-#include <utility>
+#include <algorithm>
 #include <memory>
+#include <string>
 #include <unordered_map>
+#include <utility>
+#include <vector>
 
 #include "engine/systems/event_system/event_listener.hpp"
 #include "engine/core/input/context/editor_mapping_context.hpp"
@@ -33,8 +35,6 @@
 #include "engine/systems/event_system/event/mouse_button_pressed_event.hpp"
 #include "engine/systems/event_system/event/mouse_button_released_event.hpp"
 #include "engine/systems/event_system/event/mouse_delta_event.hpp"
-#include "engine/systems/event_system/event/mouse_scroll_event.hpp"
-#include "engine/systems/event_system/event/window_resize_event.hpp"
 #include "engine/systems/event_system/event/action_ended_event.hpp"
 #include "engine/systems/event_system/event/action_started_event.hpp"
 #include "engine/systems/event_system/event/action_performed_event.hpp"
@@ -105,6 +105,122 @@ class InputManager : public EventListener
  
          return true;
      }
+
+    /**
+     * @brief Check if the subset is a strict subset of the superset
+     * 
+     * @param subset_id : Subset ID
+     * @param superset_id : Superset ID
+     * @return true : If the subset is a strict subset of the superset
+     * @return false : If the subset is not a strict subset of the superset
+     */
+    bool is_strict_input_subset(uint32_t subset_id, uint32_t superset_id) const
+    {
+        const auto& subset_inputs = this->input_mapping_context->get_input_mapping().at(subset_id);
+        const auto& superset_inputs = this->input_mapping_context->get_input_mapping().at(superset_id);
+
+        if (subset_inputs.size() >= superset_inputs.size())
+        {
+            return false;
+        }
+
+        for (const auto& subset_input : subset_inputs)
+        {
+            const bool found = std::any_of(
+                superset_inputs.begin(),
+                superset_inputs.end(),
+                [&](const Input& superset_input) { return subset_input == superset_input; }
+            );
+
+            if (!found)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * @brief True when a more specific active action makes @p action_id redundant.
+     * 
+     * @param action_id : Action ID
+     * @param active_actions : Active actions
+     * @return true : If the action is suppressed
+     * @return false : If the action is not suppressed
+     */
+    bool is_action_suppressed(uint32_t action_id, const std::vector<uint32_t>& active_actions) const
+    {
+        for (const uint32_t other_action_id : active_actions)
+        {
+            if (other_action_id == action_id)
+            {
+                continue;
+            }
+
+            if (this->is_strict_input_subset(action_id, other_action_id))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @brief Collect the active actions
+     * 
+     * @param previous : If true, collect the previous active actions
+     * @return std::vector<uint32_t> : Active actions
+     */
+    std::vector<uint32_t> collect_active_actions(bool previous = false) const
+    {
+        std::vector<uint32_t> active_actions;
+
+        for (const auto& [action_id, inputs] : this->input_mapping_context->get_input_mapping())
+        {
+            if (inputs.empty())
+            {
+                continue;
+            }
+
+            if (this->is_action_active(action_id, previous))
+            {
+                active_actions.push_back(action_id);
+            }
+        }
+
+        return active_actions;
+    }
+
+    /**
+     * @brief Check if the action is effectively active
+     * 
+     * @param action_id : Action ID
+     * @param raw_active : Raw active actions
+     * @return true : If the action is effectively active
+     * @return false : If the action is not effectively active
+     */
+    bool is_effectively_active(uint32_t action_id, const std::vector<uint32_t>& raw_active) const
+    {
+        return this->is_action_active(action_id)
+            && !this->is_action_suppressed(action_id, raw_active);
+    }
+
+    /**
+     * @brief Check if the action was effectively active
+     * 
+     * @param action_id : Action ID
+     * @param raw_active_previous : Raw active actions previous
+     * @return true : If the action was effectively active in the previous frame
+     * @return false : If the action was not effectively active in the previous frame
+     */
+    bool was_effectively_active(uint32_t action_id, const std::vector<uint32_t>& raw_active_previous) const
+    {
+        return this->is_action_active(action_id, true)
+            && !this->is_action_suppressed(action_id, raw_active_previous);
+    }
+
 public:
     /**
      * @brief Delete the default constructor to avoid duplicated bus
@@ -260,56 +376,41 @@ public:
     }
     
     /**
-     * @brief Update the input manager
+     * @brief Update the input manager to handle the input events
+     * 
+     * This function is called every frame to update the input manager and handle the input events
      */
     void update()
     {
-        // Process each action in the mapping context
-        for (auto& [action_id, inputs] : this->input_mapping_context->get_input_mapping())
-        {
-            bool currently_active = this->is_action_active(action_id);
-            bool previously_active = this->is_action_active(action_id, true);
-            
-            // Event Exclusivity Check
-            for (auto& [other_action_id, other_inputs] : this->input_mapping_context->get_input_mapping()){
-                if (action_id == other_action_id) continue;
+        const std::vector<uint32_t> raw_active = this->collect_active_actions();
+        const std::vector<uint32_t> raw_active_previous = this->collect_active_actions(true);
 
-                // IF other_action is active and other_action inputs fit in action_id inputs -> desactivate other_action
-                if (this->is_action_active(other_action_id) && other_inputs.size() <= inputs.size()){
-                    // Check if all the other_action inputs are in action_id inputs
-                    for (const auto& other_input : other_inputs){
-                        if (!std::any_of(inputs.begin(), inputs.end(), [&](const auto& input){
-                            return input.get_input_key() == other_input.get_input_key();
-                        }))
-                        {
-                            event_bus.publish_event(ActionEndedEvent(get_action_name(other_action_id)));
-                        }
-                        return;
-                    }
-                }
+        for (const auto& [action_id, inputs] : this->input_mapping_context->get_input_mapping())
+        {
+            if (inputs.empty())
+            {
+                continue;
             }
 
-            // ActionStarted
-            if (currently_active && !previously_active)
+            const bool effectively_active = this->is_effectively_active(action_id, raw_active);
+            const bool effectively_active_previous = this->was_effectively_active(action_id, raw_active_previous);
+
+            if (effectively_active && !effectively_active_previous)
             {
                 event_bus.publish_event(ActionStartedEvent(get_action_name(action_id)));
             }
 
-            // ActionPerformed
-            if (currently_active)
+            if (effectively_active)
             {
                 event_bus.publish_event(ActionPerformedEvent(get_action_name(action_id)));
             }
 
-            // ActionEnded
-            if (!currently_active && previously_active)
+            if (!effectively_active && effectively_active_previous)
             {
                 event_bus.publish_event(ActionEndedEvent(get_action_name(action_id)));
             }
-
         }
 
-        // Update the state of the keys
         for (auto& [key, state] : input_state)
         {
             state.previous = state.current;
