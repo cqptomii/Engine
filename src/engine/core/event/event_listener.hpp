@@ -12,7 +12,7 @@
 #ifndef EVENTLISTENER_HPP
 #define EVENTLISTENER_HPP
 
-#include "engine/systems/event_system/event/ievent.hpp"
+#include "engine/core/event/event/ievent.hpp"
 
 class EventListener
 {

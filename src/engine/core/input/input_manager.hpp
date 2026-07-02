@@ -22,23 +22,23 @@
 #include <utility>
 #include <vector>
 
-#include "engine/systems/event_system/event_listener.hpp"
+#include "engine/core/event/event_listener.hpp"
 #include "engine/core/input/context/editor_mapping_context.hpp"
 #include "engine/core/input/context/input_mapping_context.hpp"
 #include "engine/core/input/context/runtime_mapping_context.hpp"
-#include "engine/systems/event_system/event_bus.hpp"
+#include "engine/core/event/event_bus.hpp"
 
 // Events Inludes
-#include "engine/systems/event_system/event/key_pressed_event.hpp"
-#include "engine/systems/event_system/event/key_released_event.hpp"
-#include "engine/systems/event_system/event/mouse_motion_event.hpp"
-#include "engine/systems/event_system/event/mouse_button_pressed_event.hpp"
-#include "engine/systems/event_system/event/mouse_button_released_event.hpp"
-#include "engine/systems/event_system/event/mouse_delta_event.hpp"
-#include "engine/systems/event_system/event/action_ended_event.hpp"
-#include "engine/systems/event_system/event/action_started_event.hpp"
-#include "engine/systems/event_system/event/action_performed_event.hpp"
-#include "engine/systems/event_system/event_types.hpp"
+#include "engine/core/event/event/key_pressed_event.hpp"
+#include "engine/core/event/event/key_released_event.hpp"
+#include "engine/core/event/event/mouse_motion_event.hpp"
+#include "engine/core/event/event/mouse_button_pressed_event.hpp"
+#include "engine/core/event/event/mouse_button_released_event.hpp"
+#include "engine/core/event/event/mouse_delta_event.hpp"
+#include "engine/core/event/event/action_ended_event.hpp"
+#include "engine/core/event/event/action_started_event.hpp"
+#include "engine/core/event/event/action_performed_event.hpp"
+#include "engine/core/event/event_types.hpp"
 
 /**
  * @brief Tracks the previous and current state of a keyboard key or mouse button.

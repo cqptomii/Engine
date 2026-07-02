@@ -13,7 +13,7 @@
 #include <utility>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include "engine/systems/input_system.hpp"
+#include "engine/core/input/input_system.hpp"
 
 class Window
 {

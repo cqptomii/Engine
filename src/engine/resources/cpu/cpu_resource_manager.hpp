@@ -15,7 +15,7 @@
 #include "engine/resources/cpu/material/material_instance.hpp"
 #include "engine/resources/cpu/model/model_resource.hpp"
 #include "engine/resources/cpu/mesh_resource.hpp"
-#include "engine/utils.hpp"
+#include "engine/core/utils.hpp"
 
 class CpuResourceManager
 {

@@ -11,8 +11,8 @@
 #ifndef MOUSEBUTTONRELEASED_EVENT_HPP
 #define MOUSEBUTTONRELEASED_EVENT_HPP
 
-#include "engine/systems/event_system/event/ievent.hpp"
-#include "engine/systems/event_system/event_category.hpp"
+#include "engine/core/event/event/ievent.hpp"
+#include "engine/core/event/event_category.hpp"
 
 
 class MouseButtonReleasedEvent : public IEvent

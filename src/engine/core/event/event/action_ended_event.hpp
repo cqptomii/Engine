@@ -12,8 +12,8 @@
 #ifndef ACTION_ENDED_EVENT_HPP
 #define ACTION_ENDED_EVENT_HPP
 
-#include "engine/systems/event_system/event/ievent.hpp"
-#include "engine/systems/event_system/event_category.hpp"
+#include "engine/core/event/event/ievent.hpp"
+#include "engine/core/event/event_category.hpp"
 #include <string>
 
 class ActionEndedEvent : public IEvent

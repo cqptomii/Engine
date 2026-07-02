@@ -10,19 +10,30 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include "window.hpp"
-#include "engine/editor/editor_viewport.hpp"
+// Window includes
+#include "engine/core/window.hpp"
+
+// Input includes
 #include "engine/core/input/input_manager.hpp"
-#include "engine/rendering/renderer.hpp"
+#include "engine/core/input/input_system.hpp"
+
+// Event includes
+#include "engine/core/event/event_bus.hpp"
+
+// Resource includes
+#include "engine/resources/cpu/primitives/MeshPrimitive3D.hpp"
+
+// Systems includes
 #include "engine/systems/editor_system.hpp"
 #include "engine/systems/render_system.hpp"
-#include "engine/systems/input_system.hpp"
-#include "engine/systems/event_system/event_bus.hpp"
-#include "engine/core/primitives/MeshPrimitive3D.hpp"
+
+// Components includes
 #include "engine/ecs/components/mesh_component.hpp"
 #include "engine/ecs/components/material_component.hpp"
 #include "engine/ecs/components/transform_component.hpp"
-#include "engine/utils.hpp"
+
+// Utils includes
+#include "engine/core/utils.hpp"
 
 class Engine
 {
@@ -117,8 +128,8 @@ class Engine
         const auto cube_mesh = MeshPrimitive3D::CreateCube(this->resource_manager, "primitive/cube/default");
         const auto default_material = this->resource_manager.load_material_resource(
             "material/default",
-            "sources/shader/base.vs",
-            "sources/shader/base.fs",
+            "assets/shaders/base.vs",
+            "assets/shaders/base.fs",
             {}
         );
         const auto default_material_instance = this->resource_manager.create_material_instance(default_material);
@@ -139,7 +150,7 @@ public:
      * Initialize the default scene
      */
     Engine() : current_scene(this->resource_manager), event_bus(),
-    editor_system(event_bus),
+    editor_system(event_bus, input_manager),
     input_manager(event_bus),
     input_system(event_bus),
     resource_manager()
@@ -162,7 +173,7 @@ public:
      */
     explicit Engine(std::unique_ptr<Window> window) : current_scene(this->resource_manager), 
     event_bus(), 
-    editor_system(event_bus),
+    editor_system(event_bus, input_manager),
     input_manager(event_bus),
     input_system(event_bus),
     resource_manager()

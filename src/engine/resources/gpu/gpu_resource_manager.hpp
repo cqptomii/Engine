@@ -5,7 +5,7 @@
 #include <memory>
 #include <cstdint>
 
-#include "engine/core/wrapper/Buffer.hpp"
+#include "engine/resources/gpu/wrappers/Buffer.hpp"
 #include "engine/resources/cpu/resource_handle.hpp"
 #include "engine/resources/cpu/mesh_resource.hpp"
 #include "engine/resources/cpu/texture_resource.hpp"

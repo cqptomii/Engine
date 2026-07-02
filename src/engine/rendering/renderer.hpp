@@ -21,7 +21,7 @@
 #include "engine/rendering/gizmo_renderer.hpp"
 #include "engine/rendering/grid_renderer.hpp"
 
-#include "engine/core/wrapper/Buffer.hpp"
+#include "engine/resources/gpu/wrappers/Buffer.hpp"
 
 #include "engine/resources/cpu/material/material_resource.hpp"
 #include "engine/resources/cpu/cpu_resource_manager.hpp"

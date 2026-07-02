@@ -5,7 +5,7 @@
 #ifndef ENGINE_TEXTURE_HPP
 #define ENGINE_TEXTURE_HPP
 #include <glad/glad.h>
-#include "engine/core/wrapper/TextureBuffer.hpp"
+#include "engine/resources/gpu/wrappers/TextureBuffer.hpp"
 
 class Texture
 {

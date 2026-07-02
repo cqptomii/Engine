@@ -16,7 +16,7 @@
 #include "engine/editor/runtime_viewport.hpp"
 #include "engine/editor/iviewport.hpp"
 #include "engine/scene/Scene.hpp"
-#include "engine/systems/event_system/event_bus.hpp"
+#include "engine/core/event/event_bus.hpp"
 #include "engine/core/input/input_manager.hpp"
 
 class EditorSystem

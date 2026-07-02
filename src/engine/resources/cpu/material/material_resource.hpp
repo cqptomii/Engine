@@ -8,7 +8,7 @@
 #include "engine/resources/cpu/resource_handle.hpp"
 #include "engine/resources/cpu/shader_resource.hpp"
 #include "engine/resources/cpu/texture_resource.hpp"
-#include "engine/utils.hpp"
+#include "engine/core/utils.hpp"
 #include <unordered_map>
 #include <variant>
 #include <glm/glm.hpp>

@@ -13,7 +13,7 @@
 #define IEVENT_HPP
 
 #include <memory>
-#include "engine/systems/event_system/event_types.hpp"
+#include "engine/core/event/event_types.hpp"
 
 class IEvent
 {

@@ -6,7 +6,7 @@
 #define ENGINE_TEXTURE_RESOURCE_HPP
 #include <iostream>
 #include <ostream>
-#include "../src/stb_image.h"
+#include "stb_image.h"
 
 class TextureResource
 {

@@ -49,11 +49,11 @@ FetchContent_MakeAvailable(entt)
 # Ajouter le code source
 add_executable(Engine
         src/main.cpp
-        src/stb_image.h
-        src/stb_image_impl.cpp
-        src/glad.c
+        external/stb/stb_image.h
+        external/stb/stb_image_impl.cpp
+        external/glad/glad.c
 
-        src/engine/utils.hpp
+        src/engine/core/utils.hpp
 
         ## Core
         src/engine/core/engine.hpp
@@ -65,38 +65,38 @@ add_executable(Engine
         ## Input system
         src/engine/core/input/input.hpp
         src/engine/core/input/input_manager.hpp
+        src/engine/core/input/input_system.hpp
         src/engine/core/input/context/input_mapping_context.hpp
         src/engine/core/input/context/editor_mapping_context.hpp
         src/engine/core/input/context/runtime_mapping_context.hpp
-        src/engine/systems/input_system.hpp
 
         ## Event system
-        src/engine/systems/event_system/event_types.hpp
-        src/engine/systems/event_system/event_category.hpp
-        src/engine/systems/event_system/event_listener.hpp
-        src/engine/systems/event_system/event_dispatcher.hpp
-        src/engine/systems/event_system/event_bus.hpp
-        src/engine/systems/event_system/event/ievent.hpp
-        src/engine/systems/event_system/event/key_pressed_event.hpp
-        src/engine/systems/event_system/event/key_released_event.hpp
-        src/engine/systems/event_system/event/mouse_motion_event.hpp
-        src/engine/systems/event_system/event/mouse_scroll_event.hpp
-        src/engine/systems/event_system/event/mouse_delta_event.hpp
-        src/engine/systems/event_system/event/mouse_button_pressed_event.hpp
-        src/engine/systems/event_system/event/mouse_button_released_event.hpp
-        src/engine/systems/event_system/event/action_started_event.hpp
-        src/engine/systems/event_system/event/action_performed_event.hpp
-        src/engine/systems/event_system/event/action_ended_event.hpp
-        src/engine/systems/event_system/event/window_resize_event.hpp
+        src/engine/core/event/event_types.hpp
+        src/engine/core/event/event_category.hpp
+        src/engine/core/event/event_listener.hpp
+        src/engine/core/event/event_dispatcher.hpp
+        src/engine/core/event/event_bus.hpp
+        src/engine/core/event/event/ievent.hpp
+        src/engine/core/event/event/key_pressed_event.hpp
+        src/engine/core/event/event/key_released_event.hpp
+        src/engine/core/event/event/mouse_motion_event.hpp
+        src/engine/core/event/event/mouse_scroll_event.hpp
+        src/engine/core/event/event/mouse_delta_event.hpp
+        src/engine/core/event/event/mouse_button_pressed_event.hpp
+        src/engine/core/event/event/mouse_button_released_event.hpp
+        src/engine/core/event/event/action_started_event.hpp
+        src/engine/core/event/event/action_performed_event.hpp
+        src/engine/core/event/event/action_ended_event.hpp
+        src/engine/core/event/event/window_resize_event.hpp
 
-        ## Core - OpenGL wrappers
-        src/engine/core/wrapper/Buffer.hpp
-        src/engine/core/wrapper/VAO.hpp
-        src/engine/core/wrapper/TextureBuffer.hpp
+        ## GPU wrappers
+        src/engine/resources/gpu/wrappers/Buffer.hpp
+        src/engine/resources/gpu/wrappers/VAO.hpp
+        src/engine/resources/gpu/wrappers/TextureBuffer.hpp
 
-        ## Core - Primitives
-        src/engine/core/primitives/MeshPrimitive2D.hpp
-        src/engine/core/primitives/MeshPrimitive3D.hpp
+        ## Primitives
+        src/engine/resources/cpu/primitives/MeshPrimitive2D.hpp
+        src/engine/resources/cpu/primitives/MeshPrimitive3D.hpp
 
         ## ECS
         src/engine/ecs/registry.hpp
@@ -155,6 +155,7 @@ target_include_directories(Engine
     PRIVATE
         ${CMAKE_SOURCE_DIR}/src
         ${CMAKE_SOURCE_DIR}/libs
+        ${CMAKE_SOURCE_DIR}/external/stb
         ${glm_SOURCE_DIR}
 )
 
@@ -169,8 +170,8 @@ if (WIN32)
             $<TARGET_FILE:glfw>
             $<TARGET_FILE_DIR:Engine>
             COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${CMAKE_SOURCE_DIR}/sources
-            $<TARGET_FILE_DIR:Engine>/sources
+            ${CMAKE_SOURCE_DIR}/assets
+            $<TARGET_FILE_DIR:Engine>/assets
     )
 elseif(APPLE)
     find_library(COCOA Cocoa)

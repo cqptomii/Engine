@@ -6,13 +6,13 @@
 #include <filesystem>
 #include <string>
 #include <vector>
-#include "engine/core/wrapper/Buffer.hpp"
-#include "engine/core/wrapper/VAO.hpp"
+#include "engine/resources/gpu/wrappers/Buffer.hpp"
+#include "engine/resources/gpu/wrappers/VAO.hpp"
 #include "engine/rendering/utils/transform_data.hpp"
 #include "engine/resources/gpu/shader.hpp"
 #include "engine/resources/cpu/shader_resource.hpp"
 #include "engine/rendering/utils/camera_data.hpp"
-#include "engine/utils.hpp"
+#include "engine/core/utils.hpp"
 
 class GizmoRenderer {
 
@@ -66,8 +66,8 @@ public:
         this->load_gizmo_ssbo(this->gizmo_transforms);
 
         // Set the paths to the vertex and fragment shaders for the gizmo axes
-        this->axes_vs_path = resolve_shader_path("sources/shader/editor/editor_axes.vs");
-        this->axes_fs_path = resolve_shader_path("sources/shader/editor/editor_axes.fs");
+        this->axes_vs_path = resolve_shader_path("assets/shaders/editor/editor_axes.vs");
+        this->axes_fs_path = resolve_shader_path("assets/shaders/editor/editor_axes.fs");
     }
         
     ~GizmoRenderer() = default;

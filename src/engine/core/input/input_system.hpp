@@ -16,14 +16,14 @@
 #include <unordered_map>
 #include <memory>
 #include <utility>
-#include "engine/systems/event_system/event/key_pressed_event.hpp"
-#include "engine/systems/event_system/event/key_released_event.hpp"
-#include "engine/systems/event_system/event/mouse_button_released_event.hpp"
-#include "engine/systems/event_system/event/mouse_button_pressed_event.hpp"
-#include "engine/systems/event_system/event/mouse_motion_event.hpp"
-#include "engine/systems/event_system/event/mouse_scroll_event.hpp"
-#include "engine/systems/event_system/event/window_resize_event.hpp"
-#include "engine/systems/event_system/event_bus.hpp"
+#include "engine/core/event/event/key_pressed_event.hpp"
+#include "engine/core/event/event/key_released_event.hpp"
+#include "engine/core/event/event/mouse_button_released_event.hpp"
+#include "engine/core/event/event/mouse_button_pressed_event.hpp"
+#include "engine/core/event/event/mouse_motion_event.hpp"
+#include "engine/core/event/event/mouse_scroll_event.hpp"
+#include "engine/core/event/event/window_resize_event.hpp"
+#include "engine/core/event/event_bus.hpp"
 
 
 class InputSystem

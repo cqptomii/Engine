@@ -1,12 +1,12 @@
 #ifndef GRID_RENDERER_HPP
 #define GRID_RENDERER_HPP
 
-#include "engine/core/wrapper/Buffer.hpp"
-#include "engine/core/wrapper/VAO.hpp"
+#include "engine/resources/gpu/wrappers/Buffer.hpp"
+#include "engine/resources/gpu/wrappers/VAO.hpp"
 #include "engine/resources/gpu/shader.hpp"
 #include "engine/resources/cpu/shader_resource.hpp"
 #include "engine/rendering/utils/camera_data.hpp"
-#include "engine/utils.hpp"
+#include "engine/core/utils.hpp"
 
 
 class GridRenderer {
@@ -17,8 +17,8 @@ private:
     std::string grid_fs_path;
 
     void load_grid_shader(){
-        grid_vs_path = resolve_shader_path("sources/shader/editor/editor_grid.vs");
-        grid_fs_path = resolve_shader_path("sources/shader/editor/editor_grid.fs");
+        grid_vs_path = resolve_shader_path("assets/shaders/editor/editor_grid.vs");
+        grid_fs_path = resolve_shader_path("assets/shaders/editor/editor_grid.fs");
 
         const std::array<float, 18> quad_vertices = {
             -1.0f, -1.0f, 0.0f,

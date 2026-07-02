@@ -11,7 +11,7 @@
 #ifndef EVENTDISPATCHER_HPP
 #define EVENTDISPATCHER_HPP
 
-#include "engine/systems/event_system/event/ievent.hpp"
+#include "engine/core/event/event/ievent.hpp"
 
 class EventDispatcher
 {
