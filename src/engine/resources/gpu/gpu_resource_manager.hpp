@@ -5,7 +5,7 @@
 #include <memory>
 #include <cstdint>
 
-#include "engine/core/wrapper/Buffer.hpp"
+#include "engine/resources/gpu/wrappers/Buffer.hpp"
 #include "engine/resources/cpu/resource_handle.hpp"
 #include "engine/resources/cpu/mesh_resource.hpp"
 #include "engine/resources/cpu/texture_resource.hpp"
@@ -59,7 +59,7 @@ public:
     }
     Mesh* get_mesh(const ResourceHandle<MeshResource> handle, const MeshResource& mesh_resource)
     {
-        return this->get_mesh(handle.id, mesh_resource);
+        return this->get_mesh(handle.get_id(), mesh_resource);
     }
     
     Texture* get_texture(const uint32_t id, const TextureResource& texture_resource)
@@ -83,7 +83,7 @@ public:
     }
     Texture* get_texture(const ResourceHandle<TextureResource> handle, const TextureResource& texture_resource)
     {
-        return this->get_texture(handle.id, texture_resource);
+        return this->get_texture(handle.get_id(), texture_resource);
     }
 
     Shader* get_shader(const uint32_t id, const ShaderResource& shader_resource)
@@ -105,7 +105,7 @@ public:
     }
     Shader* get_shader(const ResourceHandle<ShaderResource> handle, const ShaderResource& shader_resource)
     {
-        return this->get_shader(handle.id, shader_resource);
+        return this->get_shader(handle.get_id(), shader_resource);
     }
 
 

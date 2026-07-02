@@ -6,6 +6,7 @@
 #define ENGINE_RENDER_SYSTEM_HPP
 
 #include <memory>
+#include "engine/systems/isystem.hpp"
 #include "engine/scene/Scene.hpp"
 #include "engine/rendering/utils/camera_data.hpp"
 #include "engine/rendering/render_queue.hpp"

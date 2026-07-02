@@ -1,6 +1,13 @@
-//
-// Created by tomfr on 06/03/2026.
-//
+/**
+ * @file editor_viewport.hpp
+ * @author Tom FRAISSE
+ * @brief 
+ * @version 0.1
+ * @date 2026-03-06
+ * 
+ * @copyright Copyright (c) 2026
+ * 
+ */
 
 #ifndef EDITOR_VIEWPORT_HPP
 #define EDITOR_VIEWPORT_HPP
@@ -8,68 +15,160 @@
 
 #include "editor_camera.hpp"
 #include "engine/editor/iviewport.hpp"
-#include "engine/core/input/input_manager.hpp"
 #include "engine/scene/Scene.hpp"
+#include <unordered_set>
+#include "engine/core/event/event/action_performed_event.hpp"
+#include "engine/core/event/event/ievent.hpp"
+#include "engine/core/event/event_listener.hpp"
+#include "engine/core/event/event_bus.hpp"
+#include "engine/core/event/event_dispatcher.hpp"
+#include "engine/core/event/event_category.hpp"
+#include "engine/core/event/event/action_started_event.hpp"
+#include "engine/core/event/event/action_ended_event.hpp"
+#include "engine/core/event/event/mouse_delta_event.hpp"
+#include "engine/core/event/event/mouse_scroll_event.hpp"
+#include "engine/core/input/input_manager.hpp"
 
 
-class EditorViewport : public IViewport{
+class EditorViewport : public IViewport, public EventListener{
+
+    // Editor Camera Object
     EditorCamera editor_camera;
+
+    // Activate the verbose mode
     bool verbose = false;
 
-public:
+    EventBus& event_bus;
 
-    EditorViewport() : editor_camera(EditorCamera())
+    // Input Manager Object
+    InputManager& input_manager;
+
+    // Active actions
+    std::unordered_set<std::string> active_actions;
+
+public:
+    /**
+     * @brief Delete the default constructor to avoid EventBus duplication
+     * 
+     */
+    EditorViewport() = delete;
+
+    /**
+     * @brief Construct a new Editor Viewport object
+     * 
+     * @param bus (EventBus&) : EventBus reference
+     * @param input_manager (InputManager&) : InputManager reference
+     */
+    EditorViewport(EventBus& bus, InputManager& input_manager) : editor_camera(EditorCamera()), event_bus(bus), input_manager(input_manager)    
     {
         // Show cam Position
         this->editor_camera.debug_cam();
+
+        // Listen Input and Mouse Events
+        event_bus.add_listener(this,
+            static_cast<int>(EventCategory::Input) |
+            static_cast<int>(EventCategory::Mouse));
     }
 
-    explicit EditorViewport(const EditorCamera& camera) : editor_camera(camera){}
-    ~EditorViewport() override = default;
+    /**
+     * @brief Construct a new Editor Viewport object
+     * 
+     * @param bus (EventBus&) : EventBus reference
+     * @param input_manager (InputManager&) : InputManager reference
+     * @param camera (EditorCamera&) : EditorCamera reference
+     */
+    explicit EditorViewport(EventBus& bus, InputManager& input_manager, const EditorCamera& camera) : editor_camera(camera), event_bus(bus), input_manager(input_manager){
+        // Show cam Position
+        this->editor_camera.debug_cam();
 
-    void update(Scene& scene, InputManager& input_manager) override
-    {
-        std::unordered_map<std::string, uint32_t> action_mapping = input_manager.get_action_mapping();
+        // Listen Input and Mouse Events
+        event_bus.add_listener(this,
+            static_cast<int>(EventCategory::Input) |
+            static_cast<int>(EventCategory::Mouse));
+    }
+    
 
-        for (auto& [action_name, action_id] : action_mapping)
-        {
-            if (input_manager.is_action_active(action_id))
-            {
-                if (action_name == "move_camera")
-                {
-                    std::cout << "Move camera" << std::endl;
-                    //Update cam position with the mouse movement
-                    const glm::vec3 mouse_delta = {input_manager.get_mouse_offset(),0};
-                    this->editor_camera.process_cam_movement(mouse_delta);
+    /**
+     * @brief Destructor of the current class
+     * @details Remove the Editor viewport from the bus listener
+     */
+    ~EditorViewport() override{
+        this->event_bus.remove_listener(this);
+    }
 
-                    // Show cam Position
-                    if (this->verbose)
-                        this->editor_camera.debug_cam();
-
-                }else if (action_name == "rotate_camera")
-                {
-                    std::cout << "Rotate camera" << std::endl;
-                    const glm::vec2 mouse_delta = input_manager.get_mouse_offset();
-                    std::cout << mouse_delta.x << " " << mouse_delta.y << std::endl;
-                    this->editor_camera.process_cam_rotation(mouse_delta.x, mouse_delta.y, 0);
-
-                    // Show cam Position
-                    if (this->verbose)
-                        this->editor_camera.debug_cam();
-                }
+    /**
+     * @brief 
+     * 
+     * @param event 
+     */
+    void on_event(const IEvent& event) override{
+        EventDispatcher dispatcher(event);
+        
+        // Process each ActionStartedEvent listened by the EditorViewport
+        dispatcher.dispatch<ActionStartedEvent>([this](const ActionStartedEvent& e) {
+            active_actions.insert(e.get_action_name());
+            
+            // Reset the camera to it's initial position
+            if (e.get_action_name() == "reset_camera") {
+                editor_camera.reset();
             }
-        }
+        });
 
-        const float scroll_delta = input_manager.get_scroll_delta();
-        if (scroll_delta != 0.0f)
-        {
-            std::cout << "Zoom camera: " << scroll_delta << std::endl;
-            this->editor_camera.process_cam_zoom(scroll_delta);
-            this->editor_camera.debug_cam();
-        }
+        // Process each ActionPerformed listened bu the EditorViewport
+        dispatcher.dispatch<ActionPerformedEvent>([this](const ActionPerformedEvent& e) -> void {
+            active_actions.insert(e.get_action_name());
+            
+            // Move the camera with the Keyboard Mappings
+            if (e.get_action_name() == "camera_move_left"){
+                editor_camera.process_cam_movement(CameraMovement::LEFT);
+            }
+            if (e.get_action_name() == "camera_move_right"){
+                editor_camera.process_cam_movement(CameraMovement::RIGHT);
+            }
+            if (e.get_action_name() == "camera_move_top"){
+                editor_camera.process_cam_movement(CameraMovement::TOP);
+            }
+            if (e.get_action_name() == "camera_move_bottom"){
+                editor_camera.process_cam_movement(CameraMovement::BOTTOM);
+            }
+        });
 
+        // Process each ActionEndedEvent listened by the EditorViewport
+        dispatcher.dispatch<ActionEndedEvent>([this](const ActionEndedEvent& e) {
+            active_actions.erase(e.get_action_name());
+        });
+
+
+        // Process each MouseDeltaEvent consumed to update the Camera position and rotation
+        dispatcher.dispatch<MouseDeltaEvent>([this](const MouseDeltaEvent& e) {
+            if (active_actions.contains("camera_vector_move")) {
+                editor_camera.process_cam_movement(e.get_x_offset(), e.get_y_offset());
+            }
+            else if (active_actions.contains("rotate_camera")) {
+                editor_camera.process_cam_rotation(e.get_x_offset(), e.get_y_offset(), 0.f);
+            }
+        });
+
+        // Process MouseScrolledEvent to update the camera FOV
+        dispatcher.dispatch<MouseScrollEvent>([this](const MouseScrollEvent& e) {
+            editor_camera.process_cam_zoom(e.get_y_offset());
+        });
     }
 
+    void update(Scene& scene) override
+    {
+        (void) scene;
+
+        if (verbose) {
+            editor_camera.debug_cam();
+        }
+    }
+
+    /**
+     * @brief Get the main camera object of the EditorViewport
+     * 
+     * @return EditorCamera& : EditorCamera Object
+     */
     EditorCamera& get_main_camera() override
     {
         return this->editor_camera;

@@ -15,7 +15,7 @@
 #include "engine/resources/cpu/material/material_instance.hpp"
 #include "engine/resources/cpu/model/model_resource.hpp"
 #include "engine/resources/cpu/mesh_resource.hpp"
-#include "engine/utils.hpp"
+#include "engine/core/utils.hpp"
 
 class CpuResourceManager
 {
@@ -57,7 +57,7 @@ public:
     }
     ModelResource& get_model(const ResourceHandle<ModelResource> handle)
     {
-        return *this->model_cache.at(handle.id);
+        return *this->model_cache.at(handle.get_id());
     }
 
     // Mesh
@@ -82,7 +82,7 @@ public:
     }
     MeshResource& get_mesh(const ResourceHandle<MeshResource> handle)
     {
-        return *this->mesh_cache.at(handle.id);
+        return *this->mesh_cache.at(handle.get_id());
     }
 
     // Material
@@ -122,7 +122,7 @@ public:
     }
     MaterialResource& get_material_resource(const ResourceHandle<MaterialResource> handle)
     {
-        return *this->material_cache.at(handle.id);
+        return *this->material_cache.at(handle.get_id());
     }
     ResourceHandle<MaterialInstance> create_material_instance(const ResourceHandle<MaterialResource> material_resource)
     {
@@ -132,7 +132,7 @@ public:
     }
     MaterialInstance& get_material_instance(const ResourceHandle<MaterialInstance> handle)
     {
-        return *this->material_instance_cache.at(handle.id);
+        return *this->material_instance_cache.at(handle.get_id());
     }
     
     // Texture
@@ -163,7 +163,7 @@ public:
     }
     TextureResource& get_texture(const ResourceHandle<TextureResource> handle)
     {
-        return *this->texture_cache.at(handle.id);
+        return *this->texture_cache.at(handle.get_id());
     }
     
     // Shader
@@ -192,7 +192,7 @@ public:
     }
     ShaderResource& get_shader(const ResourceHandle<ShaderResource> handle)
     {
-        return *this->shader_cache.at(handle.id);
+        return *this->shader_cache.at(handle.get_id());
     }
 };
 

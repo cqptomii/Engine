@@ -5,12 +5,13 @@
 #ifndef ENGINE_INPUT_MAPPING_CONTEXT_HPP
 #define ENGINE_INPUT_MAPPING_CONTEXT_HPP
 
+#include <cstdint>
 #include <unordered_map>
 #include <vector>
 #include <iostream>
 #include <ostream>
 #include <string>
-#include "input.hpp"
+#include "../input.hpp"
 
 enum MappingContextType
 {
@@ -88,7 +89,7 @@ public:
     {
         return action_mapping.at(action_name);
     }
-    std::string get_action_name(const uint32_t action_id)
+    std::string get_action_name(const uint32_t action_id) const
     {
         return this->action_names.at(action_id);
     }

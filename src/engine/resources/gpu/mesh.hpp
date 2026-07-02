@@ -9,8 +9,8 @@
 #include <glad/glad.h>
 #include <vector>
 
-#include "engine/core/wrapper/VAO.hpp"
-#include "engine/core/wrapper/Buffer.hpp"
+#include "engine/resources/gpu/wrappers/VAO.hpp"
+#include "engine/resources/gpu/wrappers/Buffer.hpp"
 #include "engine/resources/cpu/mesh_resource.hpp"
 
 class Mesh

@@ -142,8 +142,8 @@ int ModelResource::process_mesh(aiMesh* mesh, const aiScene* scene, CpuResourceM
 
 			const auto material_resource = resource_manager.load_material_resource(
 				material_cache_key,
-				"sources/shader/base.vs",
-				"sources/shader/base.fs",
+				"assets/shaders/base.vs",
+				"assets/shaders/base.fs",
 				diffuse_paths
 			);
 			const auto material_instance = resource_manager.create_material_instance(material_resource);

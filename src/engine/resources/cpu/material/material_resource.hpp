@@ -5,10 +5,10 @@
 #ifndef ENGINE_MATERIAL_RESOURCE_HPP
 #define ENGINE_MATERIAL_RESOURCE_HPP
 
-#include "../resource_handle.hpp"
-#include "../shader_resource.hpp"
-#include "../texture_resource.hpp"
-#include "../src/engine/utils.hpp"
+#include "engine/resources/cpu/resource_handle.hpp"
+#include "engine/resources/cpu/shader_resource.hpp"
+#include "engine/resources/cpu/texture_resource.hpp"
+#include "engine/core/utils.hpp"
 #include <unordered_map>
 #include <variant>
 #include <glm/glm.hpp>
@@ -42,7 +42,7 @@ public:
         // Update parameters to add textures into the material
         for (const auto& [name, texture] : textures)
         {
-            this->parameters[texture.id] = MaterialParameter{name, texture};
+            this->parameters[hash_string(name)] = MaterialParameter{name, texture};
         }
     }
     ~MaterialResource() = default;
@@ -91,7 +91,7 @@ public:
     }
     bool operator==(const MaterialResource& other) const
     {
-        return this->shader.id == other.shader.id && this->parameters.size() == other.parameters.size();
+        return this->shader.get_id() == other.shader.get_id() && this->parameters.size() == other.parameters.size();
     }
 };
 

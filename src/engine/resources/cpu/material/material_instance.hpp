@@ -58,11 +58,11 @@ public:
 
     bool operator<(const MaterialInstance& other) const
     {
-        return this->material_resource.id < other.material_resource.id;
+        return this->material_resource.get_id() < other.material_resource.get_id();
     }
     bool operator==(const MaterialInstance& other) const
     {
-        return this->material_resource.id == other.material_resource.id;
+        return this->material_resource.get_id() == other.material_resource.get_id();
     }
 };
 
