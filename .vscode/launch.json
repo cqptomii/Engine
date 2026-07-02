@@ -1,0 +1,14 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Engine (lldb)",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/Engine.exe",
+            "args": [],
+            "cwd": "${workspaceFolder}/build",
+            "preLaunchTask": "cmake-build"
+        }
+    ]
+}
