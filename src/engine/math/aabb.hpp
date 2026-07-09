@@ -12,7 +12,9 @@
 #define AABB_HPP
 
 #include <glm/glm.hpp>
+#include <vector>
 #include "ray.hpp"
+#include "engine/resources/cpu/vertex.hpp"
 
 /**
  * @brief Enum class to represent the intersection type
@@ -28,6 +30,23 @@ enum class Intersection {
  */
 class AABB {
     public: 
+
+        /**
+         * @brief Create an AABB from a list of vertices
+         * 
+         * @param vertices The vertices of the AABB
+         * @return The AABB
+         */
+        static AABB from_vertices(const std::vector<Vertex>& vertices){
+            glm::vec3 min = vertices[0].vertice;
+            glm::vec3 max = vertices[0].vertice;
+            for(const auto& vertex : vertices){
+                min = glm::min(min, vertex.vertice);
+                max = glm::max(max, vertex.vertice);
+            }
+            return AABB(min, max);
+        }
+
 
         /**
          * @brief Default constructor

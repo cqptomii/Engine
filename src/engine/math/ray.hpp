@@ -47,6 +47,14 @@ class Ray {
         }
 
         /**
+         * @brief Get the origin of the ray
+         * @return The origin of the ray
+         */
+        glm::vec3 getOrigin() const{
+            return m_origin;
+        }
+
+        /**
          * @brief Get the point on the ray at the given distance
          * @param t The distance from the origin of the ray to the point
          * @return The point on the ray at the given distance
