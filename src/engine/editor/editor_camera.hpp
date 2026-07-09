@@ -13,6 +13,7 @@
 
 #include "glm/ext/vector_float3.hpp"
 #define GLM_ENABLE_EXPERIMENTAL
+
 #include <iostream>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -20,6 +21,7 @@
 #include <glad/glad.h>
 #include "engine/rendering/utils/camera_data.hpp"
 #include "engine/core/camera_movement.hpp"
+#include "engine/math/ray.hpp"
 
 
 class EditorCamera
@@ -117,9 +119,9 @@ public:
      * @param w_height Height of the window
      * @return glm::mat4 Projection matrix
      */
-    glm::mat4 get_projection_matrix(const int w_width, const int w_height) noexcept
+    glm::mat4 get_projection_matrix(const int w_width, const int w_height) const noexcept
     {
-        this->aspect_ratio = static_cast<float>(w_width) / static_cast<float>(w_height);
+        const_cast<float&>(this->aspect_ratio) = static_cast<float>(w_width) / static_cast<float>(w_height);
         return glm::perspective(glm::radians(this->cam_fov), this->aspect_ratio, this->near_plane, this->far_plane);
     }
 
@@ -169,7 +171,7 @@ public:
      * @param ray_origin Origin of the ray
      * @param ray_direction Direction of the ray
      */
-    void screen_point_to_ray(const float mouse_x, const float mouse_y, const int screen_width, const int screen_height, glm::vec3& ray_origin, glm::vec3& ray_direction)
+    Ray screen_point_to_ray(const float mouse_x, const float mouse_y, const int screen_width, const int screen_height) const
     {
         // Convert screen coordinates to normalized device coordinates (NDC)
         float x = (2.0f * mouse_x) / screen_width - 1.0f;
@@ -184,8 +186,10 @@ public:
         glm::mat4 inv_view = glm::inverse(this->get_view_matrix());
         glm::vec4 ray_world = inv_view * inv_projection * ray_nds;
 
-        ray_direction = glm::normalize(glm::vec3(ray_world));
-        ray_origin = this->cam_position;
+        return {
+            this->cam_position,
+             glm::vec3(ray_world)
+        };  
     }
 
     /**
