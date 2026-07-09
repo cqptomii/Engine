@@ -512,6 +512,18 @@ public:
         auto it = input_state.find(key);
         return it != input_state.end() && !it->second.current && it->second.previous;
     }
+
+
+    /**
+     * @brief Get the mouse position
+     * 
+     * @return glm::vec2 : Mouse position
+     */
+    glm::vec2 get_mouse_position() const
+    {
+        return glm::vec2(last_x, last_y);
+    }
+    
 };
 
 
