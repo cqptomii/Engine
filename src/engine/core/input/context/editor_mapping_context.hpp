@@ -58,14 +58,18 @@ public:
         });
 
         // Object Manipulation
-        this->register_input_mapping("translate_object", {
+        this->register_input_mapping("manipulation_mode_translate", {
             Input(GLFW_KEY_G, KEYBOARD)
         });
-        this->register_input_mapping("rotate_object", {
+        this->register_input_mapping("manipulation_mode_rotate", {
             Input(GLFW_KEY_R, KEYBOARD)
         });
-        this->register_input_mapping("scale_object", {
+        this->register_input_mapping("manipulation_mode_scale", {
             Input(GLFW_KEY_S, KEYBOARD)
+        });
+
+        this->register_input_mapping("manipulation_mode_none", {
+            Input(GLFW_KEY_ESCAPE, KEYBOARD)
         });
 
         //  Editor Shortcut

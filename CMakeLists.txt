@@ -122,6 +122,9 @@ add_executable(Engine
         src/engine/editor/iviewport.hpp
         src/engine/editor/picking.hpp
         src/engine/editor/picking.cpp
+        src/engine/editor/manipulation_mode.hpp
+        src/engine/editor/object_manipulation.hpp
+        src/engine/editor/object_manipulation.cpp
 
         ## Systems
         src/engine/systems/isystem.hpp
@@ -136,6 +139,7 @@ add_executable(Engine
         src/engine/rendering/render_queue.hpp
         src/engine/rendering/gizmo_renderer.hpp
         src/engine/rendering/grid_renderer.hpp
+        src/engine/rendering/selection_overlay_renderer.hpp
 
         ## Resources CPU
         src/engine/resources/cpu/resource_handle.hpp

@@ -36,6 +36,8 @@
 #include "engine/core/input/input_manager.hpp"
 
 #include "engine/editor/picking.hpp"
+#include "engine/editor/manipulation_mode.hpp"
+#include "engine/editor/object_manipulation.hpp"
 
 
 class EditorViewport : public IViewport, public EventListener{
@@ -64,6 +66,13 @@ class EditorViewport : public IViewport, public EventListener{
     bool pick_one_object = false;
     bool pick_multiple_objects = false;
     bool pick_all_objects = false;
+
+    // Manipulation Mode
+    bool manipulation_hold = false;
+
+    // Pending manipulation object to apply the manipulation to the selected objects
+    PendingManipulation pending_manipulation;
+
 
 public:
     /**
@@ -147,6 +156,18 @@ public:
                 pick_all_objects = true;
             }
 
+            // Set the manipulation mode
+            if (e.get_action_name() == "manipulation_mode_translate"){
+                pending_manipulation.mode = ManipulationMode::TRANSLATE;
+            }
+            else if (e.get_action_name() == "manipulation_mode_rotate"){
+                pending_manipulation.mode = ManipulationMode::ROTATE;
+            }
+            else if (e.get_action_name() == "manipulation_mode_scale"){
+                pending_manipulation.mode = ManipulationMode::SCALE_UNIFORM;
+            }else if (e.get_action_name() == "manipulation_mode_none"){
+                pending_manipulation.mode = ManipulationMode::NONE;
+            }
         });
 
         // Process each ActionPerformed listened bu the EditorViewport
@@ -166,10 +187,38 @@ public:
             if (e.get_action_name() == "camera_move_bottom"){
                 editor_camera.process_cam_movement(CameraMovement::BOTTOM);
             }
+
+
+            // Set the manipulation hold
+            if (e.get_action_name() == "manipulation_mode_translate"){
+                manipulation_hold = true;
+            }
+            else if (e.get_action_name() == "manipulation_mode_rotate"){
+                manipulation_hold = true;
+            }
+            else if (e.get_action_name() == "manipulation_mode_scale"){
+                manipulation_hold = true;
+            }
         });
 
         // Process each ActionEndedEvent listened by the EditorViewport
         dispatcher.dispatch<ActionEndedEvent>([this](const ActionEndedEvent& e) {
+            
+            // Reset the manipulation hold
+            if (e.get_action_name() == "manipulation_mode_translate"){
+                manipulation_hold = false;
+                pending_manipulation.is_active = false;
+            }
+            else if (e.get_action_name() == "manipulation_mode_rotate"){
+                manipulation_hold = false;  
+                pending_manipulation.is_active = false;
+            }
+            else if (e.get_action_name() == "manipulation_mode_scale"){
+                manipulation_hold = false;
+                pending_manipulation.is_active = false;
+            }
+
+
             active_actions.erase(e.get_action_name());
         });
 
@@ -181,6 +230,15 @@ public:
             }
             else if (active_actions.contains("rotate_camera")) {
                 editor_camera.process_cam_rotation(e.get_x_offset(), e.get_y_offset(), 0.f);
+            }else if( manipulation_hold && !selected_objects.empty()){
+                if (active_actions.contains("manipulation_mode_translate")
+                    || active_actions.contains("manipulation_mode_rotate")
+                    || active_actions.contains("manipulation_mode_scale"))
+                {
+                    pending_manipulation.delta_x += e.get_x_offset();
+                    pending_manipulation.delta_y += e.get_y_offset();
+                    pending_manipulation.is_active = true;
+                }
             }
         });
 
@@ -262,6 +320,17 @@ public:
             // Reset the picking mode flags
             pick_all_objects = false;
         }
+        
+
+        // Process the pending manipulation if needed
+        if (pending_manipulation.is_active && !selected_objects.empty()){
+            
+            apply_manipulation(scene, selected_objects, pending_manipulation.mode, pending_manipulation.delta_x, pending_manipulation.delta_y);
+            
+            pending_manipulation.is_active = false;
+            pending_manipulation.delta_x = 0.0f;
+            pending_manipulation.delta_y = 0.0f;
+        }
 
         if (verbose) {
             editor_camera.debug_cam();
@@ -287,6 +356,24 @@ public:
     std::vector<entt::entity> get_selected_objects() const
     {
         return this->selected_objects;
+    }
+
+    /**
+     * @brief Get the pending manipulation object
+     * 
+     * @return const PendingManipulation& : PendingManipulation object
+     */
+    const PendingManipulation& get_pending_manipulation() const{
+        return this->pending_manipulation;
+    }
+
+    /**
+     * @brief Get the manipulation mode
+     * 
+     * @return ManipulationMode : ManipulationMode enum value
+     */
+    const ManipulationMode& get_manipulation_mode() const{
+        return this->pending_manipulation.mode;
     }
 };
 
