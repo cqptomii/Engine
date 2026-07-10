@@ -30,8 +30,7 @@ enum class Intersection {
  */
 class AABB {
     public: 
-
-        /**
+            /**
          * @brief Create an AABB from a list of vertices
          * 
          * @param vertices The vertices of the AABB
@@ -73,6 +72,40 @@ class AABB {
          */
         ~AABB(){}
         
+        
+        /**
+         * @brief Transform the AABB to the world space
+         * 
+         * @param transform The transform matrix
+         * @return AABB 
+         */
+        AABB transform_to_world(const glm::mat4& transform) const{
+            glm::vec3 min = transform * glm::vec4(m_min, 1.0f);
+            glm::vec3 max = transform * glm::vec4(m_max, 1.0f);
+            
+            // Return the AABB in the world space
+            return AABB(min, max);
+        }
+
+
+        /**
+         * @brief Transform the AABB to the local space
+         * 
+         * @param transform The transform matrix to the local space
+         * @return The AABB in the local space
+         */
+        AABB transform_to_local(const glm::mat4& transform) const{
+            glm::mat4 inverse_transform = glm::inverse(transform);
+
+            glm::vec3 min = inverse_transform * glm::vec4(m_min, 1.0f);
+            glm::vec3 max = inverse_transform * glm::vec4(m_max, 1.0f);
+            
+            // Return the AABB in the local space
+            return AABB(min, max);
+        }
+
+
+
         /**
          * @brief Get the minimum point of the AABB
          * 
@@ -161,7 +194,12 @@ class AABB {
          * @return The intersection type
          */
         Intersection intersects(const Ray& ray, float& t) const{
-            return Intersection::Intersecting;
+            
+            // Calculate the point at t
+            glm::vec3 point = ray.at(t);
+
+            // Check the intersection with the AABB
+            return intersects(point);
         }
 
     private:
