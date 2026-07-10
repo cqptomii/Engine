@@ -27,7 +27,10 @@
 #include "engine/core/event/event/action_ended_event.hpp"
 #include "engine/core/event/event/mouse_delta_event.hpp"
 #include "engine/core/event/event/mouse_scroll_event.hpp"
+#include "engine/core/event/event/window_resize_event.hpp"
 #include "engine/core/input/input_manager.hpp"
+
+#include "engine/editor/picking.hpp"
 
 
 class EditorViewport : public IViewport, public EventListener{
@@ -45,6 +48,15 @@ class EditorViewport : public IViewport, public EventListener{
 
     // Active actions
     std::unordered_set<std::string> active_actions;
+
+    // Framebuffer Size
+    glm::vec2 framebuffer_size = glm::vec2(800, 600);
+
+    // Selected objects
+    std::vector<entt::entity> selected_objects;
+
+    // Pending Picking Event
+    bool pending_picking_event = false;
 
 public:
     /**
@@ -67,7 +79,9 @@ public:
         // Listen Input and Mouse Events
         event_bus.add_listener(this,
             static_cast<int>(EventCategory::Input) |
-            static_cast<int>(EventCategory::Mouse));
+            static_cast<int>(EventCategory::Mouse) |
+            static_cast<int>(EventCategory::Window)
+        );
     }
 
     /**
@@ -112,6 +126,12 @@ public:
             if (e.get_action_name() == "reset_camera") {
                 editor_camera.reset();
             }
+
+            // Process Picking event to get the object under the mouse cursor
+            if( e.get_action_name() == "pick_object") {
+                pending_picking_event = true;
+            }
+
         });
 
         // Process each ActionPerformed listened bu the EditorViewport
@@ -153,11 +173,61 @@ public:
         dispatcher.dispatch<MouseScrollEvent>([this](const MouseScrollEvent& e) {
             editor_camera.process_cam_zoom(e.get_y_offset());
         });
+
+        // Process WindowResizeEvent to update the framebuffer size
+        dispatcher.dispatch<WindowResizeEvent>([this](const WindowResizeEvent& e) {
+            framebuffer_size.x = e.get_width();
+            framebuffer_size.y = e.get_height();
+        });
     }
 
+    /**
+     * @brief Set the framebuffer size used for screen-to-world picking.
+     */
+    void set_framebuffer_size(const int width, const int height)
+    {
+        this->framebuffer_size = glm::vec2(static_cast<float>(width), static_cast<float>(height));
+    }
+
+    /**
+     * @brief Update the EditorViewport
+     * 
+     * @param scene (Scene&) : Scene reference
+     * @details Update the EditorViewport and process the picking event if needed
+     */
     void update(Scene& scene) override
     {
-        (void) scene;
+        // Process the picking event if needed
+        if (pending_picking_event){
+            glm::vec2 mouse_position = input_manager.get_mouse_position();
+
+            // Create a ray from the camera to the mouse position
+            Ray ray = editor_camera.screen_point_to_ray(mouse_position.x, mouse_position.y, framebuffer_size.x, framebuffer_size.y);
+
+            // Pick the closest object to the ray
+            PickingResult object_picked = pick_closest_entity(scene, ray);
+
+            // If the picking result is a hit, add the entity to the selected objects
+
+            if (object_picked.hit){
+
+                if(verbose){
+                    std::cout << "Object picked: " << entt::to_integral(object_picked.entity)
+                              << " at distance " << object_picked.distance << std::endl;
+                }
+                
+                selected_objects = { object_picked.entity };
+            }else{
+
+                if(verbose){
+                    std::cout << "No object picked" << std::endl;
+                }
+
+                selected_objects.clear();
+            }
+
+            pending_picking_event = false;
+        }
 
         if (verbose) {
             editor_camera.debug_cam();

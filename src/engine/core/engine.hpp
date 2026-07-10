@@ -234,12 +234,12 @@ public:
             this->window_ptr->set_depth_test(true);
             this->window_ptr->disable_blending();
 
-            // Update viewports
-            this->editor_system.update(this->current_scene);
-
             int framebuffer_width = 0;
             int framebuffer_height = 0;
             glfwGetFramebufferSize(this->window_ptr->get_window_ptr(), &framebuffer_width, &framebuffer_height);
+
+            // Update viewports (picking uses the same framebuffer size as rendering)
+            this->editor_system.update(this->current_scene, framebuffer_width, framebuffer_height);
 
             // Get the editorCamera data
             auto editor_camera = this->editor_system.get_main_camera().get_camera_data(framebuffer_width, framebuffer_height);

@@ -53,11 +53,14 @@ add_executable(Engine
         external/stb/stb_image_impl.cpp
         external/glad/glad.c
 
-        src/engine/core/utils.hpp
-
         ## Core
         src/engine/core/engine.hpp
         src/engine/core/window.hpp
+        src/engine/core/utils.hpp
+
+        ## Math
+        src/engine/math/aabb.hpp
+        src/engine/math/ray.hpp
 
         ## Core Camera
         src/engine/core/camera_movement.hpp
@@ -97,6 +100,7 @@ add_executable(Engine
         ## Primitives
         src/engine/resources/cpu/primitives/MeshPrimitive2D.hpp
         src/engine/resources/cpu/primitives/MeshPrimitive3D.hpp
+        src/engine/resources/cpu/vertex.hpp
 
         ## ECS
         src/engine/ecs/registry.hpp
@@ -116,6 +120,8 @@ add_executable(Engine
         src/engine/editor/editor_viewport.hpp
         src/engine/editor/runtime_viewport.hpp
         src/engine/editor/iviewport.hpp
+        src/engine/editor/picking.hpp
+        src/engine/editor/picking.cpp
 
         ## Systems
         src/engine/systems/isystem.hpp
@@ -182,3 +188,4 @@ elseif(APPLE)
 else()
     target_link_libraries(Engine glfw GL dl pthread X11 Xrandr Xi EnTT::EnTT)
 endif()
+ 

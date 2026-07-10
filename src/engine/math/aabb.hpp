@@ -11,6 +11,8 @@
 #ifndef AABB_HPP
 #define AABB_HPP
 
+#include <cfloat>
+#include <limits>
 #include <glm/glm.hpp>
 #include <vector>
 #include "ray.hpp"
@@ -79,29 +81,30 @@ class AABB {
          * @param transform The transform matrix
          * @return AABB 
          */
-        AABB transform_to_world(const glm::mat4& transform) const{
-            glm::vec3 min = transform * glm::vec4(m_min, 1.0f);
-            glm::vec3 max = transform * glm::vec4(m_max, 1.0f);
-            
-            // Return the AABB in the world space
-            return AABB(min, max);
-        }
+        AABB transform_to_world(const glm::mat4& model_matrix) const
+        {
+            const glm::vec3 corners[8] = {
+                {m_min.x, m_min.y, m_min.z},
+                {m_max.x, m_min.y, m_min.z},
+                {m_min.x, m_max.y, m_min.z},
+                {m_max.x, m_max.y, m_min.z},
+                {m_min.x, m_min.y, m_max.z},
+                {m_max.x, m_min.y, m_max.z},
+                {m_min.x, m_max.y, m_max.z},
+                {m_max.x, m_max.y, m_max.z},
+            };
 
+            glm::vec3 world_min(std::numeric_limits<float>::max());
+            glm::vec3 world_max(std::numeric_limits<float>::lowest());
 
-        /**
-         * @brief Transform the AABB to the local space
-         * 
-         * @param transform The transform matrix to the local space
-         * @return The AABB in the local space
-         */
-        AABB transform_to_local(const glm::mat4& transform) const{
-            glm::mat4 inverse_transform = glm::inverse(transform);
+            for (const glm::vec3& corner : corners)
+            {
+                const glm::vec3 transformed = glm::vec3(model_matrix * glm::vec4(corner, 1.0f));
+                world_min = glm::min(world_min, transformed);
+                world_max = glm::max(world_max, transformed);
+            }
 
-            glm::vec3 min = inverse_transform * glm::vec4(m_min, 1.0f);
-            glm::vec3 max = inverse_transform * glm::vec4(m_max, 1.0f);
-            
-            // Return the AABB in the local space
-            return AABB(min, max);
+            return AABB(world_min, world_max);
         }
 
 
@@ -187,19 +190,65 @@ class AABB {
         }
 
         /**
-         * @brief Check if the AABB intersects with a ray
-         * 
-         * @param ray The ray to check
-         * @param t The distance from the origin of the ray to the intersection point
-         * @return The intersection type
+         * @brief Check if a world-space ray intersects this world-space AABB.
+         *
+         * @param ray World-space ray (origin + direction already include camera transform).
+         * @param t_out Distance along the ray to the nearest entry point.
+         * @return true if the ray hits the box in front of the origin.
          */
-        Intersection intersects(const Ray& ray, float& t) const{
-            
-            // Calculate the point at t
-            glm::vec3 point = ray.at(t);
+        bool intersectsRay(const Ray& ray, float& t_out) const
+        {
+            const glm::vec3 origin = ray.getOrigin();
+            const glm::vec3 direction = ray.getDirection();
 
-            // Check the intersection with the AABB
-            return intersects(point);
+            float t_min = 0.0f;
+            float t_max = FLT_MAX;
+
+            for (int axis = 0; axis < 3; ++axis)
+            {
+                const float origin_axis = origin[axis];
+                const float direction_axis = direction[axis];
+                    
+                // Check if the direction is parallel to the axis
+                if (std::abs(direction_axis) < 1e-8f)
+                {
+                    if (origin_axis < m_min[axis] || origin_axis > m_max[axis])
+                    {
+                        return false;
+                    }
+                    continue;
+                }
+
+                // Calculate the intersection points
+                const float inv_direction = 1.0f / direction_axis;
+                float t0 = (m_min[axis] - origin_axis) * inv_direction;
+                float t1 = (m_max[axis] - origin_axis) * inv_direction;
+
+                // Swap the intersection points if t0 is greater than t1
+                if (t0 > t1)
+                {
+                    std::swap(t0, t1);
+                }
+
+                // Update the intersection points
+                t_min = std::max(t_min, t0);
+                t_max = std::min(t_max, t1);
+
+                // Check if the intersection points are valid
+                if (t_min > t_max)
+                {
+                    return false;
+                }
+            }
+
+            // Check if the intersection points are valid
+            if (t_max < 0.0f)
+            {
+                return false;
+            }
+
+            t_out = t_min >= 0.0f ? t_min : t_max;
+            return true;
         }
 
     private:

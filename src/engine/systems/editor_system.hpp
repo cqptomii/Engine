@@ -34,6 +34,7 @@ class EditorSystem
     // Input Manager Object
     InputManager& input_manager;
 
+
     bool is_editor_mode = true;
 public:
     
@@ -62,8 +63,13 @@ public:
      * 
      * @param scene (Scene&) : Scene reference to update
      */
-    void update(Scene& scene)
+    void update(Scene& scene, const int framebuffer_width, const int framebuffer_height)
     {
+        if (this->is_editor_mode)
+        {
+            this->editor_viewport->set_framebuffer_size(framebuffer_width, framebuffer_height);
+        }
+
         this->current_viewport->update(scene);
     }
 

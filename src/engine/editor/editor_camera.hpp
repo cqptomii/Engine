@@ -174,22 +174,31 @@ public:
     Ray screen_point_to_ray(const float mouse_x, const float mouse_y, const int screen_width, const int screen_height) const
     {
         // Convert screen coordinates to normalized device coordinates (NDC)
-        float x = (2.0f * mouse_x) / screen_width - 1.0f;
-        float y = 1.0f - (2.0f * mouse_y) / screen_height;
-        float z = 1.0f;
+        const float x = (2.0f * mouse_x) / static_cast<float>(screen_width) - 1.0f;
+        const float y = 1.0f - (2.0f * mouse_y) / static_cast<float>(screen_height);
 
-        // Create a ray in NDC space
-        glm::vec4 ray_nds(x, y, z, 1.0f);
+        // Calculate the inverse projection and view matrices
+        const glm::mat4 inv_projection = glm::inverse(this->get_projection_matrix(screen_width, screen_height));
+        const glm::mat4 inv_view = glm::inverse(this->get_view_matrix());
+        const glm::mat4 inv_view_projection = inv_view * inv_projection;
 
-        // Convert the ray from NDC to world space
-        glm::mat4 inv_projection = glm::inverse(this->get_projection_matrix(screen_width, screen_height));
-        glm::mat4 inv_view = glm::inverse(this->get_view_matrix());
-        glm::vec4 ray_world = inv_view * inv_projection * ray_nds;
+        // Calculate the near and far clip planes
+        glm::vec4 near_clip(x, y, -1.0f, 1.0f);
+        glm::vec4 far_clip(x, y, 1.0f, 1.0f);
 
-        return {
-            this->cam_position,
-             glm::vec3(ray_world)
-        };  
+        // Calculate the near and far clip planes in world space
+        glm::vec4 near_world = inv_view_projection * near_clip;
+        glm::vec4 far_world = inv_view_projection * far_clip;
+
+        near_world /= near_world.w;
+        far_world /= far_world.w;
+
+        // Calculate the origin and direction of the ray
+        const glm::vec3 origin = this->cam_position;
+        const glm::vec3 direction = glm::normalize(glm::vec3(far_world) - origin);
+
+        // Return the ray
+        return Ray(origin, direction);
     }
 
     /**
