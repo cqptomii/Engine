@@ -46,9 +46,17 @@ public:
         });
 
         // Object Picking
-        this->register_input_mapping("pick_object", {
+        this->register_input_mapping("pick_one_object", {
             Input(GLFW_MOUSE_BUTTON_LEFT, MOUSE)
         });
+        this->register_input_mapping("pick_multiple_objects", {
+            Input(GLFW_MOUSE_BUTTON_LEFT, MOUSE),
+            Input(GLFW_KEY_LEFT_SHIFT, KEYBOARD)
+        });
+        this->register_input_mapping("pick_all_objects", {
+            Input(GLFW_KEY_A, KEYBOARD)
+        });
+
         // Object Manipulation
         this->register_input_mapping("translate_object", {
             Input(GLFW_KEY_G, KEYBOARD)

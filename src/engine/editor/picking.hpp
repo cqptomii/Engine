@@ -1,6 +1,7 @@
 #ifndef PICKING_HPP
 #define PICKING_HPP
 
+#include <vector>
 #include <entt/entt.hpp>
 #include "engine/math/ray.hpp"
 
@@ -23,5 +24,13 @@ struct PickingResult
  * Each mesh AABB is transformed with the entity model matrix only.
  */
 PickingResult pick_closest_entity(Scene& scene, const Ray& ray);
+
+/**
+ * @brief Pick all entities in the scene.
+ *
+ * @param scene The scene to pick from.
+ * @return A vector of all entities in the scene.
+ */
+std::vector<entt::entity> pick_all_entities(Scene& scene);
 
 #endif

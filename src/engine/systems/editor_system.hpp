@@ -12,6 +12,10 @@
 #ifndef ENGINE_EDITOR_SYSTEM_HPP
 #define ENGINE_EDITOR_SYSTEM_HPP
 
+#include <vector>
+
+#include <entt/entt.hpp>
+
 #include "engine/editor/editor_viewport.hpp"
 #include "engine/editor/runtime_viewport.hpp"
 #include "engine/editor/iviewport.hpp"
@@ -111,6 +115,19 @@ public:
     EditorCamera& get_main_camera()
     {
         return this->current_viewport->get_main_camera();
+    }
+
+    /**
+     * @brief Get entities currently selected in the editor viewport.
+     */
+    std::vector<entt::entity> get_selected_objects() const
+    {
+        if (this->is_editor_mode && this->editor_viewport)
+        {
+            return this->editor_viewport->get_selected_objects();
+        }
+
+        return {};
     }
 };
 

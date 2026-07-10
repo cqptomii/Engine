@@ -5,7 +5,6 @@
 #ifndef ENGINE_HPP
 #define ENGINE_HPP
 
-#include <chrono>
 #include <iostream>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -138,6 +137,12 @@ class Engine
         this->current_scene.add_component(cube_entity, TransformComponent{glm::vec3(0.0f, 0.0f, 0.0f), glm::quat(), glm::vec3(1.0f)});
         this->current_scene.add_component(cube_entity, MeshComponent{cube_mesh});
         this->current_scene.add_component(cube_entity, MaterialComponent{default_material_instance});
+
+        const auto sphere_mesh = MeshPrimitive3D::CreateUVSphere(this->resource_manager, "primitive/sphere/default");
+        const entt::entity sphere_entity = this->current_scene.add_object();
+        this->current_scene.add_component(sphere_entity, TransformComponent{glm::vec3(2.5f, 0.0f, 0.0f), glm::quat(), glm::vec3(1.0f)});
+        this->current_scene.add_component(sphere_entity, MeshComponent{sphere_mesh});
+        this->current_scene.add_component(sphere_entity, MaterialComponent{default_material_instance});
     }
 
 public:
@@ -248,7 +253,8 @@ public:
             this->render_system.update(
                 this->current_scene,
                 editor_camera,
-                this->editor_system.get_is_editor_mode()
+                this->editor_system.get_is_editor_mode(),
+                this->editor_system.get_selected_objects()
             );
 
             // Swap the framebuffers

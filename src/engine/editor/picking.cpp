@@ -46,3 +46,20 @@ PickingResult pick_closest_entity(Scene& scene, const Ray& ray)
 
     return result;
 }
+
+
+std::vector<entt::entity> pick_all_entities(Scene& scene){
+    std::vector<entt::entity> entities;
+    Registry& registry = scene.get_registry();
+    CpuResourceManager& resource_manager = scene.get_resource_manager();
+
+    // Iterate over all entities with a transform and mesh component
+    registry.view<TransformComponent, MeshComponent>(
+        [&](entt::entity entity, TransformComponent& transform, MeshComponent& mesh_component)
+        {
+            entities.push_back(entity);
+        }
+    );
+
+    return entities;
+}

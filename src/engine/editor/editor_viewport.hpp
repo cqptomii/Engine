@@ -16,7 +16,12 @@
 #include "editor_camera.hpp"
 #include "engine/editor/iviewport.hpp"
 #include "engine/scene/Scene.hpp"
+#include <algorithm>
+#include <iostream>
 #include <unordered_set>
+#include <vector>
+
+#include <entt/entt.hpp>
 #include "engine/core/event/event/action_performed_event.hpp"
 #include "engine/core/event/event/ievent.hpp"
 #include "engine/core/event/event_listener.hpp"
@@ -55,8 +60,10 @@ class EditorViewport : public IViewport, public EventListener{
     // Selected objects
     std::vector<entt::entity> selected_objects;
 
-    // Pending Picking Event
-    bool pending_picking_event = false;
+    // Picking Mode events flags
+    bool pick_one_object = false;
+    bool pick_multiple_objects = false;
+    bool pick_all_objects = false;
 
 public:
     /**
@@ -98,7 +105,9 @@ public:
         // Listen Input and Mouse Events
         event_bus.add_listener(this,
             static_cast<int>(EventCategory::Input) |
-            static_cast<int>(EventCategory::Mouse));
+            static_cast<int>(EventCategory::Mouse) |
+            static_cast<int>(EventCategory::Window)
+        );
     }
     
 
@@ -128,8 +137,14 @@ public:
             }
 
             // Process Picking event to get the object under the mouse cursor
-            if( e.get_action_name() == "pick_object") {
-                pending_picking_event = true;
+            if( e.get_action_name() == "pick_one_object") {
+                pick_one_object = true;
+            }
+            else if( e.get_action_name() == "pick_multiple_objects") {
+                pick_multiple_objects = true;
+            }
+            else if( e.get_action_name() == "pick_all_objects") {
+                pick_all_objects = true;
             }
 
         });
@@ -198,7 +213,7 @@ public:
     void update(Scene& scene) override
     {
         // Process the picking event if needed
-        if (pending_picking_event){
+        if (pick_one_object || pick_multiple_objects){
             glm::vec2 mouse_position = input_manager.get_mouse_position();
 
             // Create a ray from the camera to the mouse position
@@ -208,25 +223,44 @@ public:
             PickingResult object_picked = pick_closest_entity(scene, ray);
 
             // If the picking result is a hit, add the entity to the selected objects
-
             if (object_picked.hit){
 
                 if(verbose){
                     std::cout << "Object picked: " << entt::to_integral(object_picked.entity)
                               << " at distance " << object_picked.distance << std::endl;
                 }
-                
-                selected_objects = { object_picked.entity };
+                if(pick_one_object){
+                    selected_objects = { object_picked.entity };
+                }else if(pick_multiple_objects){
+
+                    // If the object is not already in the selected objects, add it
+                    if(std::find(selected_objects.begin(), selected_objects.end(), object_picked.entity) == selected_objects.end()){
+                        selected_objects.push_back(object_picked.entity);
+                    }
+                }
             }else{
 
                 if(verbose){
                     std::cout << "No object picked" << std::endl;
                 }
 
-                selected_objects.clear();
+                // If no object is picked, clear the selected objects
+                if(pick_one_object){
+                    selected_objects.clear();
+                }
             }
 
-            pending_picking_event = false;
+            // Reset the picking mode flags
+            pick_one_object = false;
+            pick_multiple_objects = false;
+            pick_all_objects = false;
+        }else if (pick_all_objects){
+            // Pick all entities in the scene
+            std::vector<entt::entity> all_entities = pick_all_entities(scene);
+            // Set the selected objects to the all entities
+            selected_objects = all_entities;
+            // Reset the picking mode flags
+            pick_all_objects = false;
         }
 
         if (verbose) {
@@ -242,6 +276,17 @@ public:
     EditorCamera& get_main_camera() override
     {
         return this->editor_camera;
+    }
+
+
+    /**
+     * @brief Get the selected objects
+     * 
+     * @return std::vector<entt::entity> : Vector of selected objects
+     */
+    std::vector<entt::entity> get_selected_objects() const
+    {
+        return this->selected_objects;
     }
 };
 

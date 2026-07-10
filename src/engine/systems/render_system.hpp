@@ -6,6 +6,8 @@
 #define ENGINE_RENDER_SYSTEM_HPP
 
 #include <memory>
+#include <vector>
+#include <entt/entt.hpp>
 #include "engine/systems/isystem.hpp"
 #include "engine/scene/Scene.hpp"
 #include "engine/rendering/utils/camera_data.hpp"
@@ -28,7 +30,11 @@ public:
         this->renderer_ptr = std::make_unique<Renderer>();
         this->render_queue_ptr = std::make_unique<RenderQueue>();
     };
-    void update(Scene& scene, const CameraData& camera, bool editor_mode = true)
+    void update(
+        Scene& scene,
+        const CameraData& camera,
+        bool editor_mode = true,
+        const std::vector<entt::entity>& selected_entities = {})
     {
         // Rebuild render commands from scratch every frame.
         this->render_queue_ptr->clear();
@@ -116,7 +122,7 @@ public:
         this->render_queue_ptr->sort();
 
         // Render the scene on the screen
-        this->renderer_ptr->render(camera, *this->render_queue_ptr, resource_manager, editor_mode);
+        this->renderer_ptr->render(camera, scene, *this->render_queue_ptr, resource_manager, editor_mode, selected_entities);
 
     }
 };

@@ -20,6 +20,10 @@
 #include "engine/rendering/utils/transform_data.hpp"
 #include "engine/rendering/gizmo_renderer.hpp"
 #include "engine/rendering/grid_renderer.hpp"
+#include "engine/rendering/selection_overlay_renderer.hpp"
+
+#include <entt/entt.hpp>
+#include "engine/scene/Scene.hpp"
 
 #include "engine/resources/gpu/wrappers/Buffer.hpp"
 
@@ -43,6 +47,7 @@ class Renderer
     // Rendering related classes related to the editor gizmo and the editor grid
     std::unique_ptr<GizmoRenderer> gizmo_renderer;
     std::unique_ptr<GridRenderer> grid_renderer;
+    std::unique_ptr<SelectionOverlayRenderer> selection_overlay_renderer;
 
 public:
 
@@ -162,11 +167,32 @@ public:
 
     }
 
-    void render(const CameraData& camera_data, RenderQueue& queue, CpuResourceManager& resource_manager, bool render_editor_elements = false)
+    void render(
+        const CameraData& camera_data,
+        Scene& scene,
+        RenderQueue& queue,
+        CpuResourceManager& resource_manager,
+        bool render_editor_elements = false,
+        const std::vector<entt::entity>& selected_entities = {})
     {
         // Render the scene onto the screen
         this->execute(queue, resource_manager);
 
+        if (render_editor_elements && !selected_entities.empty())
+        {
+            if (!this->selection_overlay_renderer)
+            {
+                this->selection_overlay_renderer = std::make_unique<SelectionOverlayRenderer>();
+            }
+
+            this->selection_overlay_renderer->render(
+                camera_data,
+                scene,
+                selected_entities,
+                *this->gpu_resource_manager,
+                resource_manager
+            );
+        }
 
         // If we are in editor mode, we render the editor grid and the editor gizmo on top right of the viewport
         if (render_editor_elements)
