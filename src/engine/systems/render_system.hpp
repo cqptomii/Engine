@@ -16,6 +16,7 @@
 #include "engine/ecs/components/model_component.hpp"
 #include "engine/ecs/components/mesh_component.hpp"
 #include "engine/ecs/components/material_component.hpp"
+#include "engine/editor/manipulation_mode.hpp"
 
 #include <engine/rendering/renderer.hpp>
 #include <engine/rendering/render_queue.hpp>
@@ -34,7 +35,8 @@ public:
         Scene& scene,
         const CameraData& camera,
         bool editor_mode = true,
-        const std::vector<entt::entity>& selected_entities = {})
+        const std::vector<entt::entity>& selected_entities = {},
+        ManipulationMode manipulation_mode = ManipulationMode::NONE)
     {
         // Rebuild render commands from scratch every frame.
         this->render_queue_ptr->clear();
@@ -122,7 +124,7 @@ public:
         this->render_queue_ptr->sort();
 
         // Render the scene on the screen
-        this->renderer_ptr->render(camera, scene, *this->render_queue_ptr, resource_manager, editor_mode, selected_entities);
+        this->renderer_ptr->render(camera, scene, *this->render_queue_ptr, resource_manager, editor_mode, selected_entities, manipulation_mode);
 
     }
 };

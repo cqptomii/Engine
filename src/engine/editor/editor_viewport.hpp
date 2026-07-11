@@ -38,6 +38,11 @@
 #include "engine/editor/picking.hpp"
 #include "engine/editor/manipulation_mode.hpp"
 #include "engine/editor/object_manipulation.hpp"
+#include "engine/editor/selection_context.hpp"
+#include "engine/editor/gizmo/gizmo_axis.hpp"
+#include "engine/editor/gizmo/gizmo_picker.hpp"
+#include "engine/editor/gizmo/gizmo_manipulator.hpp"
+#include "engine/rendering/utils/camera_data.hpp"
 
 
 class EditorViewport : public IViewport, public EventListener{
@@ -72,6 +77,17 @@ class EditorViewport : public IViewport, public EventListener{
 
     // Pending manipulation object to apply the manipulation to the selected objects
     PendingManipulation pending_manipulation;
+
+    // Gizmo drag state (LMB grab on an axis handle while a mode is active)
+    bool gizmo_drag_active = false;
+    GizmoAxis active_gizmo_axis = GizmoAxis::NONE;
+    float gizmo_delta_x = 0.0f;
+    float gizmo_delta_y = 0.0f;
+
+    // Rotation drag state: last ring-plane direction (from pivot) used to
+    // measure the swept angle between two mouse positions.
+    glm::vec3 gizmo_rot_prev_dir = glm::vec3(0.0f);
+    bool gizmo_rot_has_prev = false;
 
 
 public:
@@ -218,6 +234,13 @@ public:
                 pending_manipulation.is_active = false;
             }
 
+            // End of a gizmo drag when the left mouse button is released.
+            if (e.get_action_name() == "pick_one_object"){
+                gizmo_drag_active = false;
+                active_gizmo_axis = GizmoAxis::NONE;
+                gizmo_rot_has_prev = false;
+            }
+
 
             active_actions.erase(e.get_action_name());
         });
@@ -239,6 +262,10 @@ public:
                     pending_manipulation.delta_y += e.get_y_offset();
                     pending_manipulation.is_active = true;
                 }
+            }else if (gizmo_drag_active && !selected_objects.empty()){
+                // Dragging a grabbed gizmo axis with the left mouse button.
+                gizmo_delta_x += e.get_x_offset();
+                gizmo_delta_y += e.get_y_offset();
             }
         });
 
@@ -277,34 +304,56 @@ public:
             // Create a ray from the camera to the mouse position
             Ray ray = editor_camera.screen_point_to_ray(mouse_position.x, mouse_position.y, framebuffer_size.x, framebuffer_size.y);
 
-            // Pick the closest object to the ray
-            PickingResult object_picked = pick_closest_entity(scene, ray);
+            // Gizmo has priority over object picking: with an active manipulation
+            // mode, a left click that grabs an axis handle starts a gizmo drag
+            // instead of (de)selecting an object.
+            bool gizmo_grabbed = false;
+            if (pick_one_object && pending_manipulation.mode != ManipulationMode::NONE && !selected_objects.empty()){
+                const CameraData camera_data = editor_camera.get_camera_data(
+                    static_cast<int>(framebuffer_size.x), static_cast<int>(framebuffer_size.y));
+                const SelectionContext selection_context = build_selection_context(scene, selected_objects);
+                const GizmoAxis grabbed_axis = pick_gizmo_axis(ray, selection_context, pending_manipulation.mode, camera_data);
 
-            // If the picking result is a hit, add the entity to the selected objects
-            if (object_picked.hit){
-
-                if(verbose){
-                    std::cout << "Object picked: " << entt::to_integral(object_picked.entity)
-                              << " at distance " << object_picked.distance << std::endl;
+                if (grabbed_axis != GizmoAxis::NONE){
+                    gizmo_drag_active = true;
+                    active_gizmo_axis = grabbed_axis;
+                    gizmo_delta_x = 0.0f;
+                    gizmo_delta_y = 0.0f;
+                    gizmo_rot_has_prev = false;
+                    gizmo_grabbed = true;
                 }
-                if(pick_one_object){
-                    selected_objects = { object_picked.entity };
-                }else if(pick_multiple_objects){
+            }
 
-                    // If the object is not already in the selected objects, add it
-                    if(std::find(selected_objects.begin(), selected_objects.end(), object_picked.entity) == selected_objects.end()){
-                        selected_objects.push_back(object_picked.entity);
+            // Pick the closest object to the ray (skipped when a gizmo axis was grabbed)
+            if (!gizmo_grabbed){
+                PickingResult object_picked = pick_closest_entity(scene, ray);
+
+                // If the picking result is a hit, add the entity to the selected objects
+                if (object_picked.hit){
+
+                    if(verbose){
+                        std::cout << "Object picked: " << entt::to_integral(object_picked.entity)
+                                  << " at distance " << object_picked.distance << std::endl;
                     }
-                }
-            }else{
+                    if(pick_one_object){
+                        selected_objects = { object_picked.entity };
+                    }else if(pick_multiple_objects){
 
-                if(verbose){
-                    std::cout << "No object picked" << std::endl;
-                }
+                        // If the object is not already in the selected objects, add it
+                        if(std::find(selected_objects.begin(), selected_objects.end(), object_picked.entity) == selected_objects.end()){
+                            selected_objects.push_back(object_picked.entity);
+                        }
+                    }
+                }else{
 
-                // If no object is picked, clear the selected objects
-                if(pick_one_object){
-                    selected_objects.clear();
+                    if(verbose){
+                        std::cout << "No object picked" << std::endl;
+                    }
+
+                    // If no object is picked, clear the selected objects
+                    if(pick_one_object){
+                        selected_objects.clear();
+                    }
                 }
             }
 
@@ -324,12 +373,56 @@ public:
 
         // Process the pending manipulation if needed
         if (pending_manipulation.is_active && !selected_objects.empty()){
-            
-            apply_manipulation(scene, selected_objects, pending_manipulation.mode, pending_manipulation.delta_x, pending_manipulation.delta_y);
+
+            const CameraData manipulation_camera = editor_camera.get_camera_data(
+                static_cast<int>(framebuffer_size.x), static_cast<int>(framebuffer_size.y));
+
+            apply_manipulation(scene, selected_objects, pending_manipulation.mode, pending_manipulation.delta_x, pending_manipulation.delta_y, manipulation_camera);
             
             pending_manipulation.is_active = false;
             pending_manipulation.delta_x = 0.0f;
             pending_manipulation.delta_y = 0.0f;
+        }
+
+        // Process an active gizmo axis drag (LMB grab on a handle)
+        if (gizmo_drag_active && !selected_objects.empty()){
+
+            const CameraData camera_data = editor_camera.get_camera_data(
+                static_cast<int>(framebuffer_size.x), static_cast<int>(framebuffer_size.y));
+            const SelectionContext selection_context = build_selection_context(scene, selected_objects);
+
+            if (pending_manipulation.mode == ManipulationMode::ROTATE){
+                // Rotation: measure the angle swept on the ring plane between the
+                // previous and current mouse rays (accurate from any view angle).
+                glm::vec2 mouse_position = input_manager.get_mouse_position();
+                Ray ray = editor_camera.screen_point_to_ray(mouse_position.x, mouse_position.y, framebuffer_size.x, framebuffer_size.y);
+
+                glm::vec3 current_dir;
+                if (gizmo_ring_plane_dir(ray, selection_context, active_gizmo_axis, current_dir)){
+                    if (gizmo_rot_has_prev){
+                        apply_gizmo_rotation_drag(scene, selected_objects, active_gizmo_axis, selection_context, gizmo_rot_prev_dir, current_dir);
+                    }
+                    gizmo_rot_prev_dir = current_dir;
+                    gizmo_rot_has_prev = true;
+                }
+
+                gizmo_delta_x = 0.0f;
+                gizmo_delta_y = 0.0f;
+            }
+            else if (gizmo_delta_x != 0.0f || gizmo_delta_y != 0.0f){
+                apply_gizmo_manipulation(
+                    scene,
+                    selected_objects,
+                    pending_manipulation.mode,
+                    active_gizmo_axis,
+                    selection_context,
+                    camera_data,
+                    gizmo_delta_x,
+                    gizmo_delta_y);
+
+                gizmo_delta_x = 0.0f;
+                gizmo_delta_y = 0.0f;
+            }
         }
 
         if (verbose) {

@@ -18,9 +18,13 @@
 #include "engine/rendering/utils/ubo_types.hpp"
 #include "engine/rendering/utils/camera_data.hpp"
 #include "engine/rendering/utils/transform_data.hpp"
-#include "engine/rendering/gizmo_renderer.hpp"
+#include "engine/rendering/gizmo/gizmo_renderer.hpp"
+#include "engine/rendering/gizmo/transform_gizmo_renderer.hpp"
 #include "engine/rendering/grid_renderer.hpp"
 #include "engine/rendering/selection_overlay_renderer.hpp"
+
+#include "engine/editor/manipulation_mode.hpp"
+#include "engine/editor/selection_context.hpp"
 
 #include <entt/entt.hpp>
 #include "engine/scene/Scene.hpp"
@@ -48,6 +52,7 @@ class Renderer
     std::unique_ptr<GizmoRenderer> gizmo_renderer;
     std::unique_ptr<GridRenderer> grid_renderer;
     std::unique_ptr<SelectionOverlayRenderer> selection_overlay_renderer;
+    std::unique_ptr<TransformGizmoRenderer> transform_gizmo_renderer;
 
 public:
 
@@ -173,7 +178,8 @@ public:
         RenderQueue& queue,
         CpuResourceManager& resource_manager,
         bool render_editor_elements = false,
-        const std::vector<entt::entity>& selected_entities = {})
+        const std::vector<entt::entity>& selected_entities = {},
+        ManipulationMode manipulation_mode = ManipulationMode::NONE)
     {
         // Render the scene onto the screen
         this->execute(queue, resource_manager);
@@ -192,6 +198,18 @@ public:
                 *this->gpu_resource_manager,
                 resource_manager
             );
+
+            // Draw the transform gizmo (translate/rotate/scale) at the selection pivot.
+            if (manipulation_mode != ManipulationMode::NONE)
+            {
+                if (!this->transform_gizmo_renderer)
+                {
+                    this->transform_gizmo_renderer = std::make_unique<TransformGizmoRenderer>();
+                }
+
+                const SelectionContext selection_context = build_selection_context(scene, selected_entities);
+                this->transform_gizmo_renderer->render(manipulation_mode, selection_context, camera_data);
+            }
         }
 
         // If we are in editor mode, we render the editor grid and the editor gizmo on top right of the viewport

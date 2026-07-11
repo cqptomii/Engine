@@ -129,6 +129,21 @@ public:
 
         return {};
     }
+
+    /**
+     * @brief Get the active manipulation mode of the editor viewport.
+     *
+     * Used by the renderer to decide which transform gizmo to draw.
+     */
+    ManipulationMode get_manipulation_mode() const
+    {
+        if (this->is_editor_mode && this->editor_viewport)
+        {
+            return this->editor_viewport->get_manipulation_mode();
+        }
+
+        return ManipulationMode::NONE;
+    }
 };
 
 #endif //ENGINE_EDITOR_SYSTEM_HPP

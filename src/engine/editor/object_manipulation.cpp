@@ -13,7 +13,8 @@ void apply_manipulation(
     const std::vector<entt::entity>& entities,
     ManipulationMode mode,
     float delta_x,
-    float delta_y)
+    float delta_y,
+    const CameraData& camera)
 {
     // Check if the entities are empty or the manipulation mode is NONE
     if (entities.empty() || mode == ManipulationMode::NONE)
@@ -31,7 +32,11 @@ void apply_manipulation(
     Registry& registry = scene.get_registry();
     entt::registry& entt_registry = registry.raw();
 
-    // If there is several entities, calculate the local origin point 
+    // Camera plane basis (world-space right / up), extracted from the view matrix.
+    // Used so free translate follows the view and reaches any 3D direction.
+    const glm::mat3 view_rotation(camera.view);
+    const glm::vec3 camera_right = glm::normalize(glm::vec3(view_rotation[0][0], view_rotation[1][0], view_rotation[2][0]));
+    const glm::vec3 camera_up    = glm::normalize(glm::vec3(view_rotation[0][1], view_rotation[1][1], view_rotation[2][1]));
 
     for (const entt::entity entity : entities)
     {
@@ -54,8 +59,13 @@ void apply_manipulation(
         {
             case ManipulationMode::TRANSLATE:
             {
-                const glm::vec3 world_delta = local_x * (delta_x * k_translate_sensitivity) + local_y * (-delta_y * k_translate_sensitivity);
-                
+                // Move in the camera plane: horizontal mouse -> view right,
+                // vertical mouse -> view up. Orbiting the camera lets the object
+                // reach any world-space direction (full 3D), instead of being
+                // stuck in the object local XY plane.
+                const glm::vec3 world_delta = camera_right * (delta_x * k_translate_sensitivity)
+                                            + camera_up * (-delta_y * k_translate_sensitivity);
+
                 // Translate the entity
                 transform.translate(world_delta);
                 break;

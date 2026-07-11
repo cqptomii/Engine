@@ -134,13 +134,13 @@ class Engine
         const auto default_material_instance = this->resource_manager.create_material_instance(default_material);
 
         const entt::entity cube_entity = this->current_scene.add_object();
-        this->current_scene.add_component(cube_entity, TransformComponent{glm::vec3(0.0f, 0.0f, 0.0f), glm::quat(), glm::vec3(1.0f)});
+        this->current_scene.add_component(cube_entity, TransformComponent{glm::vec3(0.0f, 0.0f, 0.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(1.0f)});
         this->current_scene.add_component(cube_entity, MeshComponent{cube_mesh});
         this->current_scene.add_component(cube_entity, MaterialComponent{default_material_instance});
 
         const auto sphere_mesh = MeshPrimitive3D::CreateUVSphere(this->resource_manager, "primitive/sphere/default");
         const entt::entity sphere_entity = this->current_scene.add_object();
-        this->current_scene.add_component(sphere_entity, TransformComponent{glm::vec3(2.5f, 0.0f, 0.0f), glm::quat(), glm::vec3(1.0f)});
+        this->current_scene.add_component(sphere_entity, TransformComponent{glm::vec3(2.5f, 0.0f, 0.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(1.0f)});
         this->current_scene.add_component(sphere_entity, MeshComponent{sphere_mesh});
         this->current_scene.add_component(sphere_entity, MaterialComponent{default_material_instance});
     }
@@ -254,7 +254,8 @@ public:
                 this->current_scene,
                 editor_camera,
                 this->editor_system.get_is_editor_mode(),
-                this->editor_system.get_selected_objects()
+                this->editor_system.get_selected_objects(),
+                this->editor_system.get_manipulation_mode()
             );
 
             // Swap the framebuffers

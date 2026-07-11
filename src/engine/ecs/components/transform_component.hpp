@@ -53,7 +53,20 @@ public:
      * @param rotation : Rotation of the transform
      * @param scale : Scale of the transform
      */
-    TransformComponent( const glm::vec3& position, const glm::quat& rotation, const glm::vec3& scale ) : transform_position(position), transform_rotation(rotation), transform_scale(scale) {}
+    TransformComponent( const glm::vec3& position, const glm::quat& rotation, const glm::vec3& scale ) : transform_position(position), transform_rotation(rotation), transform_scale(scale)
+    {
+        // Guard against a degenerate (e.g. value-initialized zero) quaternion:
+        // multiplying by a zero quaternion stays zero and silently disables all
+        // rotation. Fall back to identity when the input is not a valid rotation.
+        if (glm::dot(this->transform_rotation, this->transform_rotation) < 1e-8f)
+        {
+            this->transform_rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+        }
+        else
+        {
+            this->transform_rotation = glm::normalize(this->transform_rotation);
+        }
+    }
     
     /**
      * @brief Destructor of the Transform Component
@@ -130,7 +143,7 @@ public:
      * @param rotation : Rotation of the transform
      */
     void rotate(const glm::quat& rotation) noexcept{
-        this->transform_rotation = rotation * this->transform_rotation;
+        this->transform_rotation = glm::normalize(rotation * this->transform_rotation);
     }
 
     /**

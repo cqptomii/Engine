@@ -125,6 +125,13 @@ add_executable(Engine
         src/engine/editor/manipulation_mode.hpp
         src/engine/editor/object_manipulation.hpp
         src/engine/editor/object_manipulation.cpp
+        src/engine/editor/selection_context.hpp
+        src/engine/editor/selection_context.cpp
+        src/engine/editor/gizmo/gizmo_axis.hpp
+        src/engine/editor/gizmo/gizmo_picker.hpp
+        src/engine/editor/gizmo/gizmo_picker.cpp
+        src/engine/editor/gizmo/gizmo_manipulator.hpp
+        src/engine/editor/gizmo/gizmo_manipulator.cpp
 
         ## Systems
         src/engine/systems/isystem.hpp
@@ -137,7 +144,8 @@ add_executable(Engine
         src/engine/rendering/utils/ubo_types.hpp
         src/engine/rendering/renderer.hpp
         src/engine/rendering/render_queue.hpp
-        src/engine/rendering/gizmo_renderer.hpp
+        src/engine/rendering/gizmo/gizmo_renderer.hpp
+        src/engine/rendering/gizmo/transform_gizmo_renderer.hpp
         src/engine/rendering/grid_renderer.hpp
         src/engine/rendering/selection_overlay_renderer.hpp
 
