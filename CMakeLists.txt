@@ -62,6 +62,21 @@ add_executable(Engine
         src/engine/math/aabb.hpp
         src/engine/math/ray.hpp
 
+        ## Debug
+        src/engine/core/debug/debug_config.hpp
+        src/engine/core/debug/debug_id.hpp
+        src/engine/core/debug/debug_name_registry.hpp
+        src/engine/core/debug/debug_hooks.hpp
+        src/engine/core/debug/debug_registration.hpp
+        src/engine/core/debug/instrumentation.hpp
+        src/engine/core/debug/log/logger.hpp
+        src/engine/core/debug/profile/profiler.hpp
+        src/engine/core/debug/stats/counter_registry.hpp
+        src/engine/core/debug/stats/frame_stats.hpp
+        src/engine/core/debug/stats/event_stats_listener.hpp
+        src/engine/core/debug/memory/memory_tracker.hpp
+        src/engine/core/debug/reporter/console_reporter.hpp
+
         ## Core Camera
         src/engine/core/camera_movement.hpp
 
@@ -110,6 +125,7 @@ add_executable(Engine
         src/engine/ecs/components/model_component.hpp
         src/engine/ecs/components/mesh_component.hpp
         src/engine/ecs/components/material_component.hpp
+        src/engine/ecs/components/debug_name_component.hpp
 
         ## Scene
         src/engine/scene/Scene.hpp
@@ -175,6 +191,10 @@ target_include_directories(Engine
         ${CMAKE_SOURCE_DIR}/libs
         ${CMAKE_SOURCE_DIR}/external/stb
         ${glm_SOURCE_DIR}
+)
+
+target_compile_definitions(Engine PRIVATE
+    $<$<CONFIG:Debug>:ENGINE_DEBUG>
 )
 
 # Lier GLFW et OpenGL

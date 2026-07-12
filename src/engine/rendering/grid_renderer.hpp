@@ -7,6 +7,7 @@
 #include "engine/resources/cpu/shader_resource.hpp"
 #include "engine/rendering/utils/camera_data.hpp"
 #include "engine/core/utils.hpp"
+#include "engine/core/debug/debug_hooks.hpp"
 
 
 class GridRenderer {
@@ -86,6 +87,7 @@ public:
 
         grid_vao.bind();
         glDrawArrays(GL_TRIANGLES, 0, 6);
+        debug_record_raw_draw_call();
         grid_vao.unbind();
 
         Shader::unuse();

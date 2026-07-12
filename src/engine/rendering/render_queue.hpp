@@ -51,6 +51,10 @@ public:
     {
         return commands;
     }
+
+    std::size_t size() const {
+        return this->commands.size();
+    }
 };
 
 #endif //ENGINE_RENDER_QUEUE_HPP

@@ -20,6 +20,7 @@
 
 #include <engine/rendering/renderer.hpp>
 #include <engine/rendering/render_queue.hpp>
+#include "engine/core/debug/debug_hooks.hpp"
 
 class RenderSystem
 {
@@ -122,10 +123,15 @@ public:
 
         // Sort the rendering commands
         this->render_queue_ptr->sort();
+        debug_set_gauge("render_queue_size", static_cast<uint32_t>(this->render_queue_ptr->size()));
 
         // Render the scene on the screen
         this->renderer_ptr->render(camera, scene, *this->render_queue_ptr, resource_manager, editor_mode, selected_entities, manipulation_mode);
 
+    }
+
+    GPUResourceManager& get_gpu_resource_manager() {
+        return this->renderer_ptr->get_gpu_resource_manager();
     }
 };
 

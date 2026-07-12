@@ -30,6 +30,12 @@
 #include "engine/ecs/components/mesh_component.hpp"
 #include "engine/ecs/components/material_component.hpp"
 #include "engine/ecs/components/transform_component.hpp"
+#include "engine/ecs/components/debug_name_component.hpp"
+
+// Debug includes
+#include "engine/core/debug/debug_config.hpp"
+#include "engine/core/debug/debug_registration.hpp"
+#include "engine/core/debug/instrumentation.hpp"
 
 // Utils includes
 #include "engine/core/utils.hpp"
@@ -57,9 +63,6 @@ class Engine
 
     float last_frame = 0.0f;
     float delta_time = 0.0f;
-    float fps_timer = 0.0f;
-    uint32_t fps_frame_count = 0;
-    float displayed_fps = 0.0f;
 
     /**
      * @brief GLFW error callback
@@ -134,15 +137,21 @@ class Engine
         const auto default_material_instance = this->resource_manager.create_material_instance(default_material);
 
         const entt::entity cube_entity = this->current_scene.add_object();
+        const DebugNameComponent cube_name{"Cube"};
         this->current_scene.add_component(cube_entity, TransformComponent{glm::vec3(0.0f, 0.0f, 0.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(1.0f)});
+        this->current_scene.add_component(cube_entity, cube_name);
         this->current_scene.add_component(cube_entity, MeshComponent{cube_mesh});
         this->current_scene.add_component(cube_entity, MaterialComponent{default_material_instance});
+        debug_register_name(cube_name.get_id(), cube_name.get_name());
 
         const auto sphere_mesh = MeshPrimitive3D::CreateUVSphere(this->resource_manager, "primitive/sphere/default");
         const entt::entity sphere_entity = this->current_scene.add_object();
+        const DebugNameComponent sphere_name{"Sphere"};
         this->current_scene.add_component(sphere_entity, TransformComponent{glm::vec3(2.5f, 0.0f, 0.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(1.0f)});
+        this->current_scene.add_component(sphere_entity, sphere_name);
         this->current_scene.add_component(sphere_entity, MeshComponent{sphere_mesh});
         this->current_scene.add_component(sphere_entity, MaterialComponent{default_material_instance});
+        debug_register_name(sphere_name.get_id(), sphere_name.get_name());
     }
 
 public:
@@ -161,6 +170,8 @@ public:
     resource_manager()
     {
         init();
+        Instrumentation::init();
+        Instrumentation::attach_event_bus(this->event_bus);
 
         this->window_ptr = std::make_unique<Window>(800, 600, "Engine");
         this->window_ptr->setUserPointer(&this->input_system);
@@ -184,6 +195,9 @@ public:
     resource_manager()
     {
         init();
+        Instrumentation::init();
+        Instrumentation::attach_event_bus(this->event_bus);
+
         this->window_ptr = std::move(window);
         this->window_ptr->setUserPointer(&this->input_system);
         this->initialize_default_scene();
@@ -195,6 +209,7 @@ public:
      */
     ~Engine()
     {
+        Instrumentation::shutdown();
         glfwTerminate();
         this->cleanup();
     }
@@ -226,11 +241,17 @@ public:
                 this->delta_time = 0.0f;
             }
 
-            // Poll for and process events
-            this->window_ptr->poll_events();
+            Instrumentation::begin_frame();
 
-            // Update action from the input manager
-            this->input_manager.update();
+            {
+                ENGINE_PROFILE_SCOPE("poll_events");
+                this->window_ptr->poll_events();
+            }
+
+            {
+                ENGINE_PROFILE_SCOPE("input");
+                this->input_manager.update();
+            }
 
             glClearColor(red, green, blue, alpha);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -243,50 +264,32 @@ public:
             int framebuffer_height = 0;
             glfwGetFramebufferSize(this->window_ptr->get_window_ptr(), &framebuffer_width, &framebuffer_height);
 
-            // Update viewports (picking uses the same framebuffer size as rendering)
-            this->editor_system.update(this->current_scene, framebuffer_width, framebuffer_height);
+            {
+                ENGINE_PROFILE_SCOPE("editor");
+                this->editor_system.update(this->current_scene, framebuffer_width, framebuffer_height);
+            }
 
             // Get the editorCamera data
             auto editor_camera = this->editor_system.get_main_camera().get_camera_data(framebuffer_width, framebuffer_height);
 
-            // Render the scene onto the screen
-            this->render_system.update(
-                this->current_scene,
-                editor_camera,
-                this->editor_system.get_is_editor_mode(),
-                this->editor_system.get_selected_objects(),
-                this->editor_system.get_manipulation_mode()
-            );
+            {
+                ENGINE_PROFILE_SCOPE("render");
+                this->render_system.update(
+                    this->current_scene,
+                    editor_camera,
+                    this->editor_system.get_is_editor_mode(),
+                    this->editor_system.get_selected_objects(),
+                    this->editor_system.get_manipulation_mode()
+                );
+            }
 
-            // Swap the framebuffers
-            this->window_ptr->swap_buffers();
+            {
+                ENGINE_PROFILE_SCOPE("swap");
+                this->window_ptr->swap_buffers();
+            }
 
-            // Show frame per second
-            this->show_frame_rate(this->delta_time);
-        }
-    }
-
-    /**
-     * @brief Show the frame rate
-     * 
-     * @param delta_time : The delta time
-     * Calculate the frame rate
-     * Show the frame rate
-     * Reset the frame rate timer
-     * Reset the frame rate frame count
-     */
-    void show_frame_rate(const float delta_time)
-    {
-        this->fps_timer += delta_time;
-        this->fps_frame_count++;
-
-        if (this->fps_timer >= 1.0f)
-        {
-            this->displayed_fps = static_cast<float>(this->fps_frame_count) / this->fps_timer;
-            std::cout << "FPS: " << this->displayed_fps << std::endl;
-
-            this->fps_timer = 0.0f;
-            this->fps_frame_count = 0;
+            ENGINE_REFRESH_MEMORY(this->resource_manager, this->render_system.get_gpu_resource_manager());
+            Instrumentation::end_frame(this->delta_time);
         }
     }
 };

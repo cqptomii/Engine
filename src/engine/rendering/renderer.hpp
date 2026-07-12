@@ -241,6 +241,10 @@ public:
             this->gizmo_renderer->render(camera_data);
         }
     }
+
+    GPUResourceManager& get_gpu_resource_manager() {
+        return *this->gpu_resource_manager;
+    }
 };
 
 #endif //ENGINE_RENDERER_HPP

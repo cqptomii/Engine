@@ -12,6 +12,7 @@
 #include <glm/gtc/quaternion.hpp>
 
 #include "engine/core/utils.hpp"
+#include "engine/core/debug/debug_hooks.hpp"
 #include "engine/editor/manipulation_mode.hpp"
 #include "engine/editor/selection_context.hpp"
 #include "engine/rendering/utils/camera_data.hpp"
@@ -252,6 +253,7 @@ public:
             case ManipulationMode::TRANSLATE:
                 translate_vao.bind();
                 glDrawArrays(GL_LINES, 0, translate_vertex_count);
+                debug_record_raw_draw_call();
                 translate_vao.unbind();
                 break;
 
@@ -261,6 +263,9 @@ public:
                 glDrawArrays(GL_LINE_LOOP, 0, rotate_ring_vertex_count);
                 glDrawArrays(GL_LINE_LOOP, rotate_ring_vertex_count, rotate_ring_vertex_count);
                 glDrawArrays(GL_LINE_LOOP, rotate_ring_vertex_count * 2, rotate_ring_vertex_count);
+                debug_record_raw_draw_call();
+                debug_record_raw_draw_call();
+                debug_record_raw_draw_call();
                 rotate_vao.unbind();
                 break;
 
@@ -268,6 +273,7 @@ public:
             case ManipulationMode::SCALE_NON_UNIFORM:
                 scale_vao.bind();
                 glDrawArrays(GL_LINES, 0, scale_vertex_count);
+                debug_record_raw_draw_call();
                 scale_vao.unbind();
                 break;
 

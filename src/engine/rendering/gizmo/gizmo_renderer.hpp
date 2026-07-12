@@ -13,6 +13,7 @@
 #include "engine/resources/cpu/shader_resource.hpp"
 #include "engine/rendering/utils/camera_data.hpp"
 #include "engine/core/utils.hpp"
+#include "engine/core/debug/debug_hooks.hpp"
 
 class GizmoRenderer {
 
@@ -136,6 +137,7 @@ public:
         gizmo_vao.bind();
         gizmo_ssbo.bind_base(0);
         glDrawArraysInstanced(GL_LINES, 0, 6, static_cast<GLsizei>(gizmo_transforms.size()));
+        debug_record_raw_draw_call();
         gizmo_vao.unbind();
 
         Shader::unuse();

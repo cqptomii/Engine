@@ -180,6 +180,32 @@ public:
         }
         return this->material_ubo.get();
     }
+
+    std::size_t count_meshes() const {
+        return this->mesh_cache.size();
+    }
+
+    std::size_t count_textures() const {
+        return this->texture_cache.size();
+    }
+
+    std::size_t count_shaders() const {
+        return this->shader_cache.size();
+    }
+
+    std::size_t count_ubos() const {
+        std::size_t count = 0;
+        if (this->camera_ubo) {
+            ++count;
+        }
+        if (this->object_ubo) {
+            ++count;
+        }
+        if (this->material_ubo) {
+            ++count;
+        }
+        return count;
+    }
 };
 
 

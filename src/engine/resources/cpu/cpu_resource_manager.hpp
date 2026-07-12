@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include <memory>
 #include <stdexcept>
+#include <vector>
 #include "engine/resources/cpu/resource_handle.hpp"
 #include "engine/resources/cpu/shader_resource.hpp"
 #include "engine/resources/cpu/material/material_resource.hpp"
@@ -16,6 +17,7 @@
 #include "engine/resources/cpu/model/model_resource.hpp"
 #include "engine/resources/cpu/mesh_resource.hpp"
 #include "engine/core/utils.hpp"
+#include "engine/core/debug/debug_hooks.hpp"
 
 class CpuResourceManager
 {
@@ -44,6 +46,41 @@ public:
     CpuResourceManager(const CpuResourceManager&) = delete;
     CpuResourceManager& operator=(const CpuResourceManager&) = delete;
 
+    uint32_t compute_resource_id(const std::string& path) const
+    {
+        return hash_string(normalize_resource_path_minimal(path));
+    }
+
+    bool has_cached_path(const uint32_t id) const
+    {
+        return this->id_to_path_cache.find(id) != this->id_to_path_cache.end();
+    }
+
+    std::string get_path_for_id(const uint32_t id) const
+    {
+        const auto it = this->id_to_path_cache.find(id);
+        if (it == this->id_to_path_cache.end())
+        {
+            return "";
+        }
+
+        return it->second;
+    }
+
+    std::vector<std::string> get_cached_resource_paths() const
+    {
+        std::vector<std::string> paths;
+        paths.reserve(this->id_to_path_cache.size());
+
+        for (const auto& [id, path] : this->id_to_path_cache)
+        {
+            (void)id;
+            paths.push_back(path);
+        }
+
+        return paths;
+    }
+
     // Model
     ResourceHandle<ModelResource> load_model(const std::string& path){
         uint32_t id = hash_string(
@@ -52,6 +89,7 @@ public:
         if (this->model_cache.find(id) == this->model_cache.end())
         {
             this->model_cache.emplace(id, std::make_unique<ModelResource>(path, *this));
+            debug_notify_resource_loaded(id, path);
         }
         return ResourceHandle<ModelResource>(id);
     }
@@ -70,6 +108,7 @@ public:
         {
              this->mesh_cache.emplace(id, std::make_unique<MeshResource>(vertices, indices));
              this->id_to_path_cache.emplace(id, path);
+             debug_notify_resource_loaded(id, path);
         }else{
             // Check for hash collision
             const std::string& existing_path = this->id_to_path_cache.at(id);
@@ -110,6 +149,7 @@ public:
             this->material_cache.emplace(id, std::make_unique<MaterialResource>(mat_shader, textures));
             
             this->id_to_path_cache.emplace(id, path);
+            debug_notify_resource_loaded(id, path);
         }else{
             // Check for hash collision
             const std::string& existing_path = this->id_to_path_cache.at(id);
@@ -147,6 +187,7 @@ public:
             this->texture_cache.emplace(id, std::make_unique<TextureResource>(path));
 
             this->id_to_path_cache.emplace(id, path);
+            debug_notify_resource_loaded(id, path);
         }else{
             // Check for hash collision
             const std::string& existing_path = this->id_to_path_cache.at(id);
@@ -176,6 +217,7 @@ public:
         {
             this->shader_cache.emplace(id, std::make_unique<ShaderResource>(vertex_path, fragment_path));
             this->id_to_path_cache.emplace(id, path);
+            debug_notify_resource_loaded(id, path);
         }else{
             // Check for hash collision
             const std::string& existing_path = this->id_to_path_cache.at(id);
@@ -193,6 +235,59 @@ public:
     ShaderResource& get_shader(const ResourceHandle<ShaderResource> handle)
     {
         return *this->shader_cache.at(handle.get_id());
+    }
+
+    std::size_t count_models() const {
+        return this->model_cache.size();
+    }
+
+    std::size_t count_meshes() const {
+        return this->mesh_cache.size();
+    }
+
+    std::size_t count_materials() const {
+        return this->material_cache.size();
+    }
+
+    std::size_t count_material_instances() const {
+        return this->material_instance_cache.size();
+    }
+
+    std::size_t count_textures() const {
+        return this->texture_cache.size();
+    }
+
+    std::size_t count_shaders() const {
+        return this->shader_cache.size();
+    }
+
+    bool is_mesh_loaded(const std::string& path) const {
+        return this->mesh_cache.find(this->compute_resource_id(path)) != this->mesh_cache.end();
+    }
+
+    bool is_mesh_loaded(const ResourceHandle<MeshResource> handle) const {
+        return handle && this->mesh_cache.find(handle.get_id()) != this->mesh_cache.end();
+    }
+
+    bool is_material_loaded(const std::string& path) const {
+        return this->material_cache.find(this->compute_resource_id(path)) != this->material_cache.end();
+    }
+
+    bool is_shader_loaded(const std::string& path) const {
+        return this->shader_cache.find(this->compute_resource_id(path)) != this->shader_cache.end();
+    }
+
+    bool is_texture_loaded(const std::string& path) const {
+        return this->texture_cache.find(this->compute_resource_id(path)) != this->texture_cache.end();
+    }
+
+    std::size_t count_total_resources() const {
+        return this->count_models()
+            + this->count_meshes()
+            + this->count_materials()
+            + this->count_material_instances()
+            + this->count_textures()
+            + this->count_shaders();
     }
 };
 

@@ -12,6 +12,7 @@
 #include "engine/resources/gpu/wrappers/VAO.hpp"
 #include "engine/resources/gpu/wrappers/Buffer.hpp"
 #include "engine/resources/cpu/mesh_resource.hpp"
+#include "engine/core/debug/debug_hooks.hpp"
 
 class Mesh
 {  
@@ -63,12 +64,16 @@ public:
     ~Mesh() = default;
 
     // Draw the Mesh on the screen
-    void draw( const GLenum drawing_mode = GL_TRIANGLES) const
+    void draw(const GLenum drawing_mode = GL_TRIANGLES) const
     {
-        // Bind the vertex Array before drawing on the viewport
         this->vao.bind();
         glDrawElements(drawing_mode, this->index_count, GL_UNSIGNED_INT, nullptr);
+        debug_record_draw_call(static_cast<uint32_t>(this->index_count));
         this->vao.unbind();
+    }
+
+    int get_index_count() const {
+        return this->index_count;
     }
     bool operator<(const Mesh& other) const
     {
