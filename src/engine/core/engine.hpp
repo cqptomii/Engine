@@ -40,6 +40,10 @@
 // Utils includes
 #include "engine/core/utils.hpp"
 
+// Editor UI includes
+#include "engine/editor/ui/imgui_layer.hpp"
+#include "engine/editor/ui/editor_ui.hpp"
+
 class Engine
 {
     // Pointer to the main OpenGL Window
@@ -56,6 +60,10 @@ class Engine
     EditorSystem editor_system;
     RenderSystem render_system;
     CpuResourceManager resource_manager;
+
+    // Editor UI
+    ImGuiLayer imgui_layer;
+    EditorUI editor_ui;
 
     // Current Scene displayed
     Scene current_scene;
@@ -175,6 +183,7 @@ public:
 
         this->window_ptr = std::make_unique<Window>(800, 600, "Engine");
         this->window_ptr->setUserPointer(&this->input_system);
+        this->imgui_layer.init(this->window_ptr->get_window_ptr());
         this->initialize_default_scene();
     }
 
@@ -200,6 +209,7 @@ public:
 
         this->window_ptr = std::move(window);
         this->window_ptr->setUserPointer(&this->input_system);
+        this->imgui_layer.init(this->window_ptr->get_window_ptr());
         this->initialize_default_scene();
     }
 
@@ -209,6 +219,7 @@ public:
      */
     ~Engine()
     {
+        this->imgui_layer.shutdown();
         Instrumentation::shutdown();
         glfwTerminate();
         this->cleanup();
@@ -249,6 +260,11 @@ public:
             }
 
             {
+                ENGINE_PROFILE_SCOPE("imgui_begin");
+                this->imgui_layer.begin_frame();
+            }
+
+            {
                 ENGINE_PROFILE_SCOPE("input");
                 this->input_manager.update();
             }
@@ -281,6 +297,20 @@ public:
                     this->editor_system.get_selected_objects(),
                     this->editor_system.get_manipulation_mode()
                 );
+            }
+
+            {
+                ENGINE_PROFILE_SCOPE("editor_ui");
+                this->editor_ui.render(
+                    this->window_ptr->get_window_ptr(),
+                    framebuffer_width,
+                    framebuffer_height
+                );
+            }
+
+            {
+                ENGINE_PROFILE_SCOPE("imgui_end");
+                this->imgui_layer.end_frame();
             }
 
             {

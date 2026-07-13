@@ -1,7 +1,7 @@
 #ifndef OBJECT_MANIPULATION_HPP
 #define OBJECT_MANIPULATION_HPP
 
-#include "engine/editor/manipulation_mode.hpp"
+#include "engine/editor/picking/manipulation_mode.hpp"
 #include <entt/entity/entity.hpp>
 #include "engine/scene/scene.hpp"
 #include "engine/rendering/utils/camera_data.hpp"

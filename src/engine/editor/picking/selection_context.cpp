@@ -1,4 +1,4 @@
-#include "engine/editor/selection_context.hpp"
+#include "engine/editor/picking/selection_context.hpp"
 
 #include "engine/ecs/components/transform_component.hpp"
 #include "engine/ecs/registry.hpp"

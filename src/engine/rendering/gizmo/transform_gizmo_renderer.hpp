@@ -13,8 +13,8 @@
 
 #include "engine/core/utils.hpp"
 #include "engine/core/debug/debug_hooks.hpp"
-#include "engine/editor/manipulation_mode.hpp"
-#include "engine/editor/selection_context.hpp"
+#include "engine/editor/picking/manipulation_mode.hpp"
+#include "engine/editor/picking/selection_context.hpp"
 #include "engine/rendering/utils/camera_data.hpp"
 #include "engine/rendering/utils/transform_data.hpp"
 #include "engine/resources/cpu/shader_resource.hpp"

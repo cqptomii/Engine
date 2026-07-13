@@ -1,4 +1,4 @@
-#include "engine/editor/object_manipulation.hpp"
+#include "engine/editor/picking/object_manipulation.hpp"
 #include "engine/ecs/components/transform_component.hpp"
 
 namespace {

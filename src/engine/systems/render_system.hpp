@@ -16,7 +16,7 @@
 #include "engine/ecs/components/model_component.hpp"
 #include "engine/ecs/components/mesh_component.hpp"
 #include "engine/ecs/components/material_component.hpp"
-#include "engine/editor/manipulation_mode.hpp"
+#include "engine/editor/picking/manipulation_mode.hpp"
 
 #include <engine/rendering/renderer.hpp>
 #include <engine/rendering/render_queue.hpp>

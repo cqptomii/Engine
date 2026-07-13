@@ -2,8 +2,8 @@
 #define GIZMO_PICKER_HPP
 
 #include "engine/editor/gizmo/gizmo_axis.hpp"
-#include "engine/editor/manipulation_mode.hpp"
-#include "engine/editor/selection_context.hpp"
+#include "engine/editor/picking/manipulation_mode.hpp"
+#include "engine/editor/picking/selection_context.hpp"
 #include "engine/math/ray.hpp"
 #include "engine/rendering/utils/camera_data.hpp"
 

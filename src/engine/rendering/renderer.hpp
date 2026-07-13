@@ -23,8 +23,8 @@
 #include "engine/rendering/grid_renderer.hpp"
 #include "engine/rendering/selection_overlay_renderer.hpp"
 
-#include "engine/editor/manipulation_mode.hpp"
-#include "engine/editor/selection_context.hpp"
+#include "engine/editor/picking/manipulation_mode.hpp"
+#include "engine/editor/picking/selection_context.hpp"
 
 #include <entt/entt.hpp>
 #include "engine/scene/Scene.hpp"

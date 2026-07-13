@@ -46,6 +46,22 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(entt)
 
+set(IMGUI_DIR ${CMAKE_SOURCE_DIR}/external/imgui)
+add_library(imgui STATIC
+        ${IMGUI_DIR}/imgui.cpp
+        ${IMGUI_DIR}/imgui_draw.cpp
+        ${IMGUI_DIR}/imgui_tables.cpp
+        ${IMGUI_DIR}/imgui_widgets.cpp
+        ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp
+        ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
+)
+target_include_directories(imgui PUBLIC
+        ${IMGUI_DIR}
+        ${IMGUI_DIR}/backends
+)
+target_compile_definitions(imgui PUBLIC GLFW_INCLUDE_NONE)
+target_link_libraries(imgui PUBLIC glfw)
+
 # Ajouter le code source
 add_executable(Engine
         src/main.cpp
@@ -136,18 +152,20 @@ add_executable(Engine
         src/engine/editor/editor_viewport.hpp
         src/engine/editor/runtime_viewport.hpp
         src/engine/editor/iviewport.hpp
-        src/engine/editor/picking.hpp
-        src/engine/editor/picking.cpp
-        src/engine/editor/manipulation_mode.hpp
-        src/engine/editor/object_manipulation.hpp
-        src/engine/editor/object_manipulation.cpp
-        src/engine/editor/selection_context.hpp
-        src/engine/editor/selection_context.cpp
+        src/engine/editor/picking/picking.hpp
+        src/engine/editor/picking/picking.cpp
+        src/engine/editor/picking/manipulation_mode.hpp
+        src/engine/editor/picking/object_manipulation.hpp
+        src/engine/editor/picking/object_manipulation.cpp
+        src/engine/editor/picking/selection_context.hpp
+        src/engine/editor/picking/selection_context.cpp
         src/engine/editor/gizmo/gizmo_axis.hpp
         src/engine/editor/gizmo/gizmo_picker.hpp
         src/engine/editor/gizmo/gizmo_picker.cpp
         src/engine/editor/gizmo/gizmo_manipulator.hpp
         src/engine/editor/gizmo/gizmo_manipulator.cpp
+        src/engine/editor/ui/imgui_layer.hpp
+        src/engine/editor/ui/editor_ui.hpp
 
         ## Systems
         src/engine/systems/isystem.hpp
@@ -199,7 +217,7 @@ target_compile_definitions(Engine PRIVATE
 
 # Lier GLFW et OpenGL
 if (WIN32)
-    target_link_libraries(Engine PRIVATE glfw opengl32 assimp EnTT::EnTT)
+    target_link_libraries(Engine PRIVATE imgui glfw opengl32 assimp EnTT::EnTT)
     add_custom_command(TARGET Engine POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:assimp>
@@ -216,8 +234,8 @@ elseif(APPLE)
     find_library(IOKIT IOKit)
     find_library(COREVIDEO CoreVideo)
     find_library(ASSIMP Assimp)
-    target_link_libraries(Engine glfw ${COCOA} ${IOKIT} ${COREVIDEO} ${ASSIMP} EnTT::EnTT)
+    target_link_libraries(Engine imgui glfw ${COCOA} ${IOKIT} ${COREVIDEO} ${ASSIMP} EnTT::EnTT)
 else()
-    target_link_libraries(Engine glfw GL dl pthread X11 Xrandr Xi EnTT::EnTT)
+    target_link_libraries(Engine imgui glfw GL dl pthread X11 Xrandr Xi EnTT::EnTT)
 endif()
  
