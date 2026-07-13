@@ -3,8 +3,14 @@
 
 #include <GLFW/glfw3.h>
 
+#include <functional>
+
 #include <imgui.h>
 #include <imgui_internal.h>
+
+#include "engine/editor/ui/viewport_framebuffer.hpp"
+#include "engine/editor/ui/viewport_layout.hpp"
+#include "engine/editor/ui/panels/log_panel.hpp"
 
 class EditorUI {
     static constexpr const char* VIEWPORT_TITLE = "Viewport";
@@ -17,6 +23,12 @@ class EditorUI {
     bool show_properties = true;
     bool show_log = true;
     bool request_layout_reset = false;
+    bool viewport_panel_open = false;
+
+    ViewportFramebuffer viewport_framebuffer;
+    ViewportClientBounds viewport_client_bounds{};
+    bool viewport_hovered = false;
+    ImVec2 pending_viewport_size{0.0f, 0.0f};
 
     void build_default_dock_layout(const ImGuiID dockspace_id, const ImVec2 dock_size) {
         ImGui::DockBuilderRemoveNode(dockspace_id);
@@ -82,11 +94,7 @@ class EditorUI {
         ImGui::PopStyleVar(3);
 
         const ImGuiID dockspace_id = ImGui::GetID("EditorDockSpace");
-        ImGui::DockSpace(
-            dockspace_id,
-            ImVec2(0.0f, 0.0f),
-            ImGuiDockNodeFlags_PassthruCentralNode
-        );
+        ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
         this->setup_default_dock_layout(dockspace_id, dock_size);
         if (this->request_layout_reset) {
             this->reset_dock_layout(dockspace_id, dock_size);
@@ -147,23 +155,13 @@ class EditorUI {
         ImGui::EndMainMenuBar();
     }
 
-    void draw_viewport_panel() {
-        if (!this->show_viewport) {
-            return;
-        }
+    void set_viewport_client_bounds_from_screen_rect(const ImVec2& rect_min, const ImVec2& rect_max) {
+        const ImGuiViewport* main_viewport = ImGui::GetMainViewport();
 
-        ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-        const ImGuiWindowFlags viewport_flags =
-            ImGuiWindowFlags_NoBackground |
-            ImGuiWindowFlags_NoScrollbar;
-
-        if (ImGui::Begin(VIEWPORT_TITLE, nullptr, viewport_flags)) {
-            const ImVec2 content_size = ImGui::GetContentRegionAvail();
-            ImGui::TextDisabled("Viewport overlay (scene 3D visible behind).");
-            ImGui::Text("Content area: %.0f x %.0f", content_size.x, content_size.y);
-        }
-        ImGui::End();
-        ImGui::PopStyleColor();
+        this->viewport_client_bounds.x = rect_min.x - main_viewport->Pos.x;
+        this->viewport_client_bounds.y = rect_min.y - main_viewport->Pos.y;
+        this->viewport_client_bounds.width = rect_max.x - rect_min.x;
+        this->viewport_client_bounds.height = rect_max.y - rect_min.y;
     }
 
     void draw_hierarchy_panel() {
@@ -195,24 +193,106 @@ class EditorUI {
     }
 
     void draw_log_panel() {
-        if (!this->show_log) {
-            return;
-        }
-
-        if (ImGui::Begin(LOG_TITLE, &this->show_log)) {
-            ImGui::TextUnformatted("[Info][Engine] Editor UI initialized.");
-        }
-        ImGui::End();
+        editor_ui::draw_log_panel(LOG_TITLE, this->show_log);
     }
 
 public:
-    void render(GLFWwindow* window, const int /*framebuffer_width*/, const int /*framebuffer_height*/) {
+    void begin_frame_ui(GLFWwindow* window) {
         this->draw_menu_bar(window);
         this->draw_dockspace_host();
-        this->draw_viewport_panel();
         this->draw_hierarchy_panel();
         this->draw_properties_panel();
         this->draw_log_panel();
+    }
+
+    bool begin_viewport_panel(ViewportLayout& layout) {
+        layout.visible = this->show_viewport;
+        layout.hovered = false;
+        layout.render_width = 0;
+        layout.render_height = 0;
+        this->viewport_hovered = false;
+        this->viewport_panel_open = false;
+
+        if (!this->show_viewport) {
+            return false;
+        }
+
+        const ImGuiWindowFlags viewport_flags =
+            ImGuiWindowFlags_NoScrollbar |
+            ImGuiWindowFlags_NoScrollWithMouse;
+
+        if (!ImGui::Begin(VIEWPORT_TITLE, nullptr, viewport_flags)) {
+            ImGui::End();
+            return false;
+        }
+
+        this->viewport_panel_open = true;
+        this->pending_viewport_size = ImGui::GetContentRegionAvail();
+        layout.render_width = static_cast<int>(this->pending_viewport_size.x);
+        layout.render_height = static_cast<int>(this->pending_viewport_size.y);
+        layout.hovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows);
+        this->viewport_hovered = layout.hovered;
+
+        const ImVec2 content_origin = ImGui::GetCursorScreenPos();
+        this->set_viewport_client_bounds_from_screen_rect(
+            content_origin,
+            ImVec2(
+                content_origin.x + this->pending_viewport_size.x,
+                content_origin.y + this->pending_viewport_size.y
+            )
+        );
+
+        return layout.render_width > 0 && layout.render_height > 0;
+    }
+
+    void end_viewport_panel(const std::function<void(const ViewportLayout&)>& render_viewport) {
+        if (!this->viewport_panel_open) {
+            return;
+        }
+
+        ViewportLayout layout{};
+        layout.visible = true;
+        layout.render_width = static_cast<int>(this->pending_viewport_size.x);
+        layout.render_height = static_cast<int>(this->pending_viewport_size.y);
+        layout.hovered = this->viewport_hovered;
+
+        if (layout.render_width > 0 && layout.render_height > 0 && render_viewport) {
+            this->viewport_framebuffer.resize(layout.render_width, layout.render_height);
+            render_viewport(layout);
+
+            if (this->viewport_framebuffer.is_valid()) {
+                const ImTextureID texture_id = static_cast<ImTextureID>(
+                    static_cast<intptr_t>(this->viewport_framebuffer.get_color_texture_id())
+                );
+                ImGui::Image(
+                    texture_id,
+                    this->pending_viewport_size,
+                    ImVec2(0.0f, 1.0f),
+                    ImVec2(1.0f, 0.0f)
+                );
+                this->set_viewport_client_bounds_from_screen_rect(
+                    ImGui::GetItemRectMin(),
+                    ImGui::GetItemRectMax()
+                );
+            }
+        } else {
+            ImGui::TextDisabled("Viewport size is too small.");
+        }
+
+        ImGui::End();
+        this->viewport_panel_open = false;
+    }
+
+    [[nodiscard]] ViewportFramebuffer& get_viewport_framebuffer() noexcept {
+        return this->viewport_framebuffer;
+    }
+
+    [[nodiscard]] const ViewportClientBounds& get_viewport_client_bounds() const noexcept {
+        return this->viewport_client_bounds;
+    }
+
+    [[nodiscard]] bool allows_viewport_input() const noexcept {
+        return this->viewport_hovered && this->viewport_client_bounds.is_valid();
     }
 
     [[nodiscard]] bool wants_capture_mouse() const {

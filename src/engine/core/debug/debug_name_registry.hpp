@@ -4,6 +4,8 @@
 #include <iostream>
 #include <string>
 #include <unordered_map>
+#include <utility>
+#include <vector>
 
 #include "engine/core/debug/debug_id.hpp"
 
@@ -65,6 +67,17 @@ public:
 
     std::size_t count() const {
         return this->name_map.size();
+    }
+
+    [[nodiscard]] std::vector<std::pair<DebugId, std::string>> get_entries() const {
+        std::vector<std::pair<DebugId, std::string>> entries;
+        entries.reserve(this->name_map.size());
+
+        for (const auto& [id, name] : this->name_map) {
+            entries.emplace_back(id, name);
+        }
+
+        return entries;
     }
 };
 

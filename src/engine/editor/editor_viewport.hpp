@@ -43,6 +43,7 @@
 #include "engine/editor/gizmo/gizmo_picker.hpp"
 #include "engine/editor/gizmo/gizmo_manipulator.hpp"
 #include "engine/rendering/utils/camera_data.hpp"
+#include "engine/editor/ui/viewport_layout.hpp"
 
 
 class EditorViewport : public IViewport, public EventListener{
@@ -61,8 +62,14 @@ class EditorViewport : public IViewport, public EventListener{
     // Active actions
     std::unordered_set<std::string> active_actions;
 
-    // Framebuffer Size
-    glm::vec2 framebuffer_size = glm::vec2(800, 600);
+    // Viewport render target size (FBO / picking projection)
+    glm::vec2 viewport_render_size = glm::vec2(800.0f, 600.0f);
+
+    // Viewport panel bounds in GLFW client coordinates
+    ViewportClientBounds viewport_client_bounds{};
+
+    // Whether mouse interactions should affect the 3D viewport this frame
+    bool viewport_input_enabled = true;
 
     // Selected objects
     std::vector<entt::entity> selected_objects;
@@ -248,6 +255,10 @@ public:
 
         // Process each MouseDeltaEvent consumed to update the Camera position and rotation
         dispatcher.dispatch<MouseDeltaEvent>([this](const MouseDeltaEvent& e) {
+            if (!this->viewport_input_enabled) {
+                return;
+            }
+
             if (active_actions.contains("camera_vector_move")) {
                 editor_camera.process_cam_movement(e.get_x_offset(), e.get_y_offset());
             }
@@ -271,22 +282,49 @@ public:
 
         // Process MouseScrolledEvent to update the camera FOV
         dispatcher.dispatch<MouseScrollEvent>([this](const MouseScrollEvent& e) {
+            if (!this->viewport_input_enabled) {
+                return;
+            }
+
             editor_camera.process_cam_zoom(e.get_y_offset());
         });
 
-        // Process WindowResizeEvent to update the framebuffer size
         dispatcher.dispatch<WindowResizeEvent>([this](const WindowResizeEvent& e) {
-            framebuffer_size.x = e.get_width();
-            framebuffer_size.y = e.get_height();
+            this->viewport_render_size = glm::vec2(static_cast<float>(e.get_width()), static_cast<float>(e.get_height()));
         });
+    }
+
+    [[nodiscard]] glm::vec2 get_viewport_local_mouse() const {
+        const glm::vec2 client_mouse = this->input_manager.get_mouse_position();
+        return viewport_client_to_framebuffer(
+            client_mouse,
+            this->viewport_client_bounds,
+            this->viewport_render_size
+        );
+    }
+
+    /**
+     * @brief Configure viewport input gating and client bounds (previous frame).
+     */
+    void set_viewport_input_context(const ViewportClientBounds& bounds, const bool input_enabled) {
+        this->viewport_client_bounds = bounds;
+        this->viewport_input_enabled = input_enabled;
+    }
+
+    /**
+     * @brief Set the viewport render target size used for projection and picking.
+     */
+    void set_viewport_render_size(const int width, const int height) {
+        this->viewport_render_size = glm::vec2(static_cast<float>(width), static_cast<float>(height));
     }
 
     /**
      * @brief Set the framebuffer size used for screen-to-world picking.
+     * @deprecated Use set_viewport_render_size().
      */
     void set_framebuffer_size(const int width, const int height)
     {
-        this->framebuffer_size = glm::vec2(static_cast<float>(width), static_cast<float>(height));
+        this->set_viewport_render_size(width, height);
     }
 
     /**
@@ -298,11 +336,20 @@ public:
     void update(Scene& scene) override
     {
         // Process the picking event if needed
-        if (pick_one_object || pick_multiple_objects){
-            glm::vec2 mouse_position = input_manager.get_mouse_position();
-
+        if (this->viewport_input_enabled && (pick_one_object || pick_multiple_objects)){
+            const glm::vec2 local_mouse = this->get_viewport_local_mouse();
+            if (local_mouse.x < 0.0f || local_mouse.y < 0.0f) {
+                pick_one_object = false;
+                pick_multiple_objects = false;
+                pick_all_objects = false;
+            } else {
             // Create a ray from the camera to the mouse position
-            Ray ray = editor_camera.screen_point_to_ray(mouse_position.x, mouse_position.y, framebuffer_size.x, framebuffer_size.y);
+            Ray ray = editor_camera.screen_point_to_ray(
+                local_mouse.x,
+                local_mouse.y,
+                static_cast<int>(this->viewport_render_size.x),
+                static_cast<int>(this->viewport_render_size.y)
+            );
 
             // Gizmo has priority over object picking: with an active manipulation
             // mode, a left click that grabs an axis handle starts a gizmo drag
@@ -310,7 +357,8 @@ public:
             bool gizmo_grabbed = false;
             if (pick_one_object && pending_manipulation.mode != ManipulationMode::NONE && !selected_objects.empty()){
                 const CameraData camera_data = editor_camera.get_camera_data(
-                    static_cast<int>(framebuffer_size.x), static_cast<int>(framebuffer_size.y));
+                    static_cast<int>(this->viewport_render_size.x),
+                    static_cast<int>(this->viewport_render_size.y));
                 const SelectionContext selection_context = build_selection_context(scene, selected_objects);
                 const GizmoAxis grabbed_axis = pick_gizmo_axis(ray, selection_context, pending_manipulation.mode, camera_data);
 
@@ -361,6 +409,7 @@ public:
             pick_one_object = false;
             pick_multiple_objects = false;
             pick_all_objects = false;
+            }
         }else if (pick_all_objects){
             // Pick all entities in the scene
             std::vector<entt::entity> all_entities = pick_all_entities(scene);
@@ -372,10 +421,11 @@ public:
         
 
         // Process the pending manipulation if needed
-        if (pending_manipulation.is_active && !selected_objects.empty()){
+        if (this->viewport_input_enabled && pending_manipulation.is_active && !selected_objects.empty()){
 
             const CameraData manipulation_camera = editor_camera.get_camera_data(
-                static_cast<int>(framebuffer_size.x), static_cast<int>(framebuffer_size.y));
+                static_cast<int>(this->viewport_render_size.x),
+                static_cast<int>(this->viewport_render_size.y));
 
             apply_manipulation(scene, selected_objects, pending_manipulation.mode, pending_manipulation.delta_x, pending_manipulation.delta_y, manipulation_camera);
             
@@ -385,17 +435,27 @@ public:
         }
 
         // Process an active gizmo axis drag (LMB grab on a handle)
-        if (gizmo_drag_active && !selected_objects.empty()){
+        if (this->viewport_input_enabled && gizmo_drag_active && !selected_objects.empty()){
 
             const CameraData camera_data = editor_camera.get_camera_data(
-                static_cast<int>(framebuffer_size.x), static_cast<int>(framebuffer_size.y));
+                static_cast<int>(this->viewport_render_size.x),
+                static_cast<int>(this->viewport_render_size.y));
             const SelectionContext selection_context = build_selection_context(scene, selected_objects);
 
             if (pending_manipulation.mode == ManipulationMode::ROTATE){
                 // Rotation: measure the angle swept on the ring plane between the
                 // previous and current mouse rays (accurate from any view angle).
-                glm::vec2 mouse_position = input_manager.get_mouse_position();
-                Ray ray = editor_camera.screen_point_to_ray(mouse_position.x, mouse_position.y, framebuffer_size.x, framebuffer_size.y);
+                const glm::vec2 local_mouse = this->get_viewport_local_mouse();
+                if (local_mouse.x < 0.0f || local_mouse.y < 0.0f) {
+                    gizmo_delta_x = 0.0f;
+                    gizmo_delta_y = 0.0f;
+                } else {
+                Ray ray = editor_camera.screen_point_to_ray(
+                    local_mouse.x,
+                    local_mouse.y,
+                    static_cast<int>(this->viewport_render_size.x),
+                    static_cast<int>(this->viewport_render_size.y)
+                );
 
                 glm::vec3 current_dir;
                 if (gizmo_ring_plane_dir(ray, selection_context, active_gizmo_axis, current_dir)){
@@ -408,6 +468,7 @@ public:
 
                 gizmo_delta_x = 0.0f;
                 gizmo_delta_y = 0.0f;
+                }
             }
             else if (gizmo_delta_x != 0.0f || gizmo_delta_y != 0.0f){
                 apply_gizmo_manipulation(

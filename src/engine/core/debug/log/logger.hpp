@@ -2,17 +2,15 @@
 #define ENGINE_DEBUG_LOGGER_HPP
 
 #include <iostream>
+#include <string>
 #include <string_view>
 
-enum class LogLevel {
-    Trace,
-    Info,
-    Warning,
-    Error
-};
+#include "engine/core/debug/log/log_buffer.hpp"
+#include "engine/core/debug/log/log_types.hpp"
 
 class Logger {
     LogLevel min_level = LogLevel::Info;
+    LogBuffer buffer;
 
     static const char* level_to_string(const LogLevel level) {
         switch (level) {
@@ -39,8 +37,22 @@ public:
             return;
         }
 
+        this->buffer.push(LogEntry{
+            level,
+            std::string(category),
+            std::string(message)
+        });
+
         std::ostream& out = (level >= LogLevel::Warning) ? std::cerr : std::cout;
         out << "[" << level_to_string(level) << "][" << category << "] " << message << std::endl;
+    }
+
+    [[nodiscard]] const LogBuffer& get_buffer() const noexcept {
+        return this->buffer;
+    }
+
+    void clear_buffer() {
+        this->buffer.clear();
     }
 };
 

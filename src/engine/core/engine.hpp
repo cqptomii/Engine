@@ -43,6 +43,8 @@
 // Editor UI includes
 #include "engine/editor/ui/imgui_layer.hpp"
 #include "engine/editor/ui/editor_ui.hpp"
+#include "engine/editor/ui/viewport_layout.hpp"
+#include "engine/editor/ui/viewport_framebuffer.hpp"
 
 class Engine
 {
@@ -264,49 +266,77 @@ public:
                 this->imgui_layer.begin_frame();
             }
 
+            int framebuffer_width = 0;
+            int framebuffer_height = 0;
+            glfwGetFramebufferSize(this->window_ptr->get_window_ptr(), &framebuffer_width, &framebuffer_height);
+
+            this->editor_ui.begin_frame_ui(this->window_ptr->get_window_ptr());
+
+            ViewportLayout viewport_layout{};
+            const bool has_viewport = this->editor_ui.begin_viewport_panel(viewport_layout);
+
+            this->editor_system.prepare_viewport_input(
+                this->editor_ui.get_viewport_client_bounds(),
+                this->editor_ui.allows_viewport_input()
+            );
+
             {
                 ENGINE_PROFILE_SCOPE("input");
                 this->input_manager.update();
             }
 
-            glClearColor(red, green, blue, alpha);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-            // Set the OpenGL state for rendering
-            this->window_ptr->set_depth_test(true);
-            this->window_ptr->disable_blending();
-
-            int framebuffer_width = 0;
-            int framebuffer_height = 0;
-            glfwGetFramebufferSize(this->window_ptr->get_window_ptr(), &framebuffer_width, &framebuffer_height);
-
-            {
-                ENGINE_PROFILE_SCOPE("editor");
-                this->editor_system.update(this->current_scene, framebuffer_width, framebuffer_height);
-            }
-
-            // Get the editorCamera data
-            auto editor_camera = this->editor_system.get_main_camera().get_camera_data(framebuffer_width, framebuffer_height);
-
-            {
-                ENGINE_PROFILE_SCOPE("render");
-                this->render_system.update(
-                    this->current_scene,
-                    editor_camera,
-                    this->editor_system.get_is_editor_mode(),
-                    this->editor_system.get_selected_objects(),
-                    this->editor_system.get_manipulation_mode()
-                );
-            }
-
-            {
+            if (has_viewport) {
                 ENGINE_PROFILE_SCOPE("editor_ui");
-                this->editor_ui.render(
-                    this->window_ptr->get_window_ptr(),
-                    framebuffer_width,
-                    framebuffer_height
-                );
+                this->editor_ui.end_viewport_panel([&](const ViewportLayout& layout) {
+                    if (!layout.visible || layout.render_width <= 0 || layout.render_height <= 0) {
+                        return;
+                    }
+
+                    ViewportFramebuffer& viewport_fbo = this->editor_ui.get_viewport_framebuffer();
+                    viewport_fbo.bind();
+
+                    float clear_red = 0.0f;
+                    float clear_green = 0.0f;
+                    float clear_blue = 0.0f;
+                    float clear_alpha = 1.0f;
+                    convert_hex_to_rgba(0x383c42, clear_red, clear_green, clear_blue, clear_alpha);
+                    glClearColor(clear_red, clear_green, clear_blue, clear_alpha);
+                    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+                    this->window_ptr->set_depth_test(true);
+                    this->window_ptr->disable_blending();
+
+                    {
+                        ENGINE_PROFILE_SCOPE("editor");
+                        this->editor_system.update(
+                            this->current_scene,
+                            layout.render_width,
+                            layout.render_height
+                        );
+                    }
+
+                    const auto editor_camera = this->editor_system.get_main_camera().get_camera_data(
+                        layout.render_width,
+                        layout.render_height
+                    );
+
+                    {
+                        ENGINE_PROFILE_SCOPE("render");
+                        this->render_system.update(
+                            this->current_scene,
+                            editor_camera,
+                            this->editor_system.get_is_editor_mode(),
+                            this->editor_system.get_selected_objects(),
+                            this->editor_system.get_manipulation_mode()
+                        );
+                    }
+
+                    viewport_fbo.unbind(framebuffer_width, framebuffer_height);
+                });
             }
+
+            glClearColor(red, green, blue, alpha);
+            glClear(GL_COLOR_BUFFER_BIT);
 
             {
                 ENGINE_PROFILE_SCOPE("imgui_end");

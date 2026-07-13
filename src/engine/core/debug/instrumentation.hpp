@@ -35,6 +35,7 @@ public:
 
         Instrumentation::logger_instance.set_min_level(LogLevel::Info);
         Instrumentation::name_registry.register_name(DebugId::system(), "System");
+        Instrumentation::logger_instance.log(LogLevel::Info, "Engine", "Debug instrumentation initialized.");
 
         debug_name_register_fn() = [](const uint32_t resource_id, const std::string& path) {
             Instrumentation::name_registry.register_name(
@@ -70,6 +71,7 @@ public:
 #ifdef ENGINE_DEBUG
         Instrumentation::profiler_instance.begin_frame();
         Instrumentation::counter_registry.reset_frame();
+        Instrumentation::event_stats_listener.reset_frame_counts();
 #endif
     }
 

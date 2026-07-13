@@ -5,6 +5,8 @@
 #include <iostream>
 #include <string>
 #include <unordered_map>
+#include <utility>
+#include <vector>
 
 #include "engine/core/debug/debug_id.hpp"
 
@@ -62,6 +64,14 @@ public:
         this->counters.clear();
     }
 
+    [[nodiscard]] std::vector<std::pair<std::string, uint32_t>> get_system_gauges() const {
+        return this->collect_entries(this->gauges, DebugId::system());
+    }
+
+    [[nodiscard]] std::vector<std::pair<std::string, uint32_t>> get_system_counters() const {
+        return this->collect_entries(this->counters, DebugId::system());
+    }
+
     void print(const DebugId id = DebugId::system()) const {
         bool printed_header = false;
         for (const auto& [counter_key, value] : this->gauges) {
@@ -89,6 +99,25 @@ public:
 
             std::cout << "  - " << counter_key.key << ": " << value << std::endl;
         }
+    }
+
+private:
+    [[nodiscard]] static std::vector<std::pair<std::string, uint32_t>> collect_entries(
+        const std::unordered_map<CounterKey, uint32_t, CounterKeyHash>& source,
+        const DebugId id)
+    {
+        std::vector<std::pair<std::string, uint32_t>> entries;
+        entries.reserve(source.size());
+
+        for (const auto& [counter_key, value] : source) {
+            if (counter_key.id != id) {
+                continue;
+            }
+
+            entries.emplace_back(counter_key.key, value);
+        }
+
+        return entries;
     }
 };
 

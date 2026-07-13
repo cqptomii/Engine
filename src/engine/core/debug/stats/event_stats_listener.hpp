@@ -35,31 +35,46 @@ inline const char* event_type_to_string(const EventType type) {
 }
 
 class EventStatsListener : public EventListener {
-    std::unordered_map<EventType, uint32_t> event_counts;
-    uint32_t total_events = 0;
+    std::unordered_map<EventType, uint32_t> interval_event_counts;
+    std::unordered_map<EventType, uint32_t> frame_event_counts;
+    uint32_t interval_total_events = 0;
+    uint32_t frame_total_events = 0;
 
 public:
     void on_event(const IEvent& event) override {
-        this->event_counts[event.get_type()]++;
-        this->total_events++;
+        const EventType type = event.get_type();
+        this->interval_event_counts[type]++;
+        this->frame_event_counts[type]++;
+        this->interval_total_events++;
+        this->frame_total_events++;
+    }
+
+    void reset_frame_counts() {
+        this->frame_event_counts.clear();
+        this->frame_total_events = 0;
     }
 
     void print_and_reset() {
-        std::cout << "Events/s: " << this->total_events << std::endl;
-        if (this->event_counts.empty()) {
+        std::cout << "Events/s: " << this->interval_total_events << std::endl;
+        if (this->interval_event_counts.empty()) {
+            this->interval_total_events = 0;
             return;
         }
 
-        for (const auto& [type, count] : this->event_counts) {
+        for (const auto& [type, count] : this->interval_event_counts) {
             std::cout << "  - " << event_type_to_string(type) << ": " << count << std::endl;
         }
 
-        this->event_counts.clear();
-        this->total_events = 0;
+        this->interval_event_counts.clear();
+        this->interval_total_events = 0;
     }
 
-    uint32_t get_total_events() const {
-        return this->total_events;
+    [[nodiscard]] uint32_t get_frame_total_events() const {
+        return this->frame_total_events;
+    }
+
+    [[nodiscard]] uint32_t get_total_events() const {
+        return this->interval_total_events;
     }
 };
 

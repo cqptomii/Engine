@@ -85,6 +85,8 @@ add_executable(Engine
         src/engine/core/debug/debug_hooks.hpp
         src/engine/core/debug/debug_registration.hpp
         src/engine/core/debug/instrumentation.hpp
+        src/engine/core/debug/log/log_types.hpp
+        src/engine/core/debug/log/log_buffer.hpp
         src/engine/core/debug/log/logger.hpp
         src/engine/core/debug/profile/profiler.hpp
         src/engine/core/debug/stats/counter_registry.hpp
@@ -166,6 +168,10 @@ add_executable(Engine
         src/engine/editor/gizmo/gizmo_manipulator.cpp
         src/engine/editor/ui/imgui_layer.hpp
         src/engine/editor/ui/editor_ui.hpp
+        src/engine/editor/ui/viewport_framebuffer.hpp
+        src/engine/editor/ui/viewport_layout.hpp
+        src/engine/editor/ui/panels/debug_panel.hpp
+        src/engine/editor/ui/panels/log_panel.hpp
 
         ## Systems
         src/engine/systems/isystem.hpp

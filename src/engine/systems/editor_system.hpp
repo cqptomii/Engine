@@ -23,6 +23,8 @@
 #include "engine/core/event/event_bus.hpp"
 #include "engine/core/input/input_manager.hpp"
 
+#include "engine/editor/ui/viewport_layout.hpp"
+
 class EditorSystem
 {
     // Current viewport
@@ -63,15 +65,28 @@ public:
     }
 
     /**
+     * @brief Configure editor viewport input using the previous UI frame state.
+     */
+    void prepare_viewport_input(const ViewportClientBounds& bounds, const bool input_enabled)
+    {
+        if (this->is_editor_mode && this->editor_viewport)
+        {
+            this->editor_viewport->set_viewport_input_context(bounds, input_enabled);
+        }
+    }
+
+    /**
      * @brief Update the editor system
      * 
      * @param scene (Scene&) : Scene reference to update
+     * @param viewport_width Render target width of the viewport panel
+     * @param viewport_height Render target height of the viewport panel
      */
-    void update(Scene& scene, const int framebuffer_width, const int framebuffer_height)
+    void update(Scene& scene, const int viewport_width, const int viewport_height)
     {
         if (this->is_editor_mode)
         {
-            this->editor_viewport->set_framebuffer_size(framebuffer_width, framebuffer_height);
+            this->editor_viewport->set_viewport_render_size(viewport_width, viewport_height);
         }
 
         this->current_viewport->update(scene);
