@@ -71,6 +71,9 @@ class EditorViewport : public IViewport, public EventListener{
     // Whether mouse interactions should affect the 3D viewport this frame
     bool viewport_input_enabled = true;
 
+    // Whether editor keyboard shortcuts should affect the viewport this frame
+    bool viewport_keyboard_enabled = true;
+
     // Selected objects
     std::vector<entt::entity> selected_objects;
 
@@ -162,10 +165,30 @@ public:
         // Process each ActionStartedEvent listened by the EditorViewport
         dispatcher.dispatch<ActionStartedEvent>([this](const ActionStartedEvent& e) {
             active_actions.insert(e.get_action_name());
-            
-            // Reset the camera to it's initial position
+
             if (e.get_action_name() == "reset_camera") {
+                if (!this->viewport_keyboard_enabled) {
+                    return;
+                }
                 editor_camera.reset();
+                return;
+            }
+
+            if (e.get_action_name() == "pick_one_object"
+                || e.get_action_name() == "pick_multiple_objects"
+                || e.get_action_name() == "pick_all_objects") {
+                if (!this->viewport_input_enabled) {
+                    return;
+                }
+            }
+
+            if (e.get_action_name() == "manipulation_mode_translate"
+                || e.get_action_name() == "manipulation_mode_rotate"
+                || e.get_action_name() == "manipulation_mode_scale"
+                || e.get_action_name() == "manipulation_mode_none") {
+                if (!this->viewport_keyboard_enabled) {
+                    return;
+                }
             }
 
             // Process Picking event to get the object under the mouse cursor
@@ -196,6 +219,23 @@ public:
         // Process each ActionPerformed listened bu the EditorViewport
         dispatcher.dispatch<ActionPerformedEvent>([this](const ActionPerformedEvent& e) -> void {
             active_actions.insert(e.get_action_name());
+
+            if (e.get_action_name() == "camera_move_left"
+                || e.get_action_name() == "camera_move_right"
+                || e.get_action_name() == "camera_move_top"
+                || e.get_action_name() == "camera_move_bottom") {
+                if (!this->viewport_keyboard_enabled) {
+                    return;
+                }
+            }
+
+            if (e.get_action_name() == "manipulation_mode_translate"
+                || e.get_action_name() == "manipulation_mode_rotate"
+                || e.get_action_name() == "manipulation_mode_scale") {
+                if (!this->viewport_keyboard_enabled) {
+                    return;
+                }
+            }
             
             // Move the camera with the Keyboard Mappings
             if (e.get_action_name() == "camera_move_left"){
@@ -306,9 +346,27 @@ public:
     /**
      * @brief Configure viewport input gating and client bounds (previous frame).
      */
-    void set_viewport_input_context(const ViewportClientBounds& bounds, const bool input_enabled) {
+    void set_viewport_input_context(
+        const ViewportClientBounds& bounds,
+        const bool mouse_input_enabled,
+        const bool keyboard_input_enabled)
+    {
         this->viewport_client_bounds = bounds;
-        this->viewport_input_enabled = input_enabled;
+        this->viewport_input_enabled = mouse_input_enabled;
+        this->viewport_keyboard_enabled = keyboard_input_enabled;
+    }
+
+    void select_entity(const entt::entity entity) {
+        if (entity == entt::null) {
+            this->selected_objects.clear();
+            return;
+        }
+
+        this->selected_objects = { entity };
+    }
+
+    void clear_selection() {
+        this->selected_objects.clear();
     }
 
     /**

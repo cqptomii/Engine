@@ -43,6 +43,7 @@
 // Editor UI includes
 #include "engine/editor/ui/imgui_layer.hpp"
 #include "engine/editor/ui/editor_ui.hpp"
+#include "engine/editor/ui/editor_context.hpp"
 #include "engine/editor/ui/viewport_layout.hpp"
 #include "engine/editor/ui/viewport_framebuffer.hpp"
 
@@ -270,14 +271,34 @@ public:
             int framebuffer_height = 0;
             glfwGetFramebufferSize(this->window_ptr->get_window_ptr(), &framebuffer_width, &framebuffer_height);
 
-            this->editor_ui.begin_frame_ui(this->window_ptr->get_window_ptr());
+            this->editor_ui.begin_frame_ui(
+                this->window_ptr->get_window_ptr(),
+                EditorUIContext{
+                    this->current_scene,
+                    this->editor_system.get_selected_objects(),
+                    [this](const entt::entity entity) {
+                        this->editor_system.select_entity(entity);
+                    },
+                    [this]() {
+                        this->editor_system.clear_selection();
+                    },
+                    [this](const PrimitiveType primitive_type) {
+                        return this->editor_system.spawn_primitive_in_front_of_camera(
+                            this->current_scene,
+                            this->resource_manager,
+                            primitive_type
+                        );
+                    }
+                }
+            );
 
             ViewportLayout viewport_layout{};
-            const bool has_viewport = this->editor_ui.begin_viewport_panel(viewport_layout);
+            this->editor_ui.begin_viewport_panel(viewport_layout);
 
             this->editor_system.prepare_viewport_input(
                 this->editor_ui.get_viewport_client_bounds(),
-                this->editor_ui.allows_viewport_input()
+                this->editor_ui.allows_viewport_mouse_input(),
+                this->editor_ui.allows_viewport_keyboard_input()
             );
 
             {
@@ -285,9 +306,7 @@ public:
                 this->input_manager.update();
             }
 
-            if (has_viewport) {
-                ENGINE_PROFILE_SCOPE("editor_ui");
-                this->editor_ui.end_viewport_panel([&](const ViewportLayout& layout) {
+            this->editor_ui.end_viewport_panel([&](const ViewportLayout& layout) {
                     if (!layout.visible || layout.render_width <= 0 || layout.render_height <= 0) {
                         return;
                     }
@@ -333,7 +352,6 @@ public:
 
                     viewport_fbo.unbind(framebuffer_width, framebuffer_height);
                 });
-            }
 
             glClearColor(red, green, blue, alpha);
             glClear(GL_COLOR_BUFFER_BIT);

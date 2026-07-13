@@ -24,6 +24,10 @@
 #include "engine/core/input/input_manager.hpp"
 
 #include "engine/editor/ui/viewport_layout.hpp"
+#include "engine/editor/ui/editor_context.hpp"
+#include "engine/editor/editor_scene_factory.hpp"
+
+#include <glm/glm.hpp>
 
 class EditorSystem
 {
@@ -67,11 +71,14 @@ public:
     /**
      * @brief Configure editor viewport input using the previous UI frame state.
      */
-    void prepare_viewport_input(const ViewportClientBounds& bounds, const bool input_enabled)
+    void prepare_viewport_input(
+        const ViewportClientBounds& bounds,
+        const bool mouse_input_enabled,
+        const bool keyboard_input_enabled)
     {
         if (this->is_editor_mode && this->editor_viewport)
         {
-            this->editor_viewport->set_viewport_input_context(bounds, input_enabled);
+            this->editor_viewport->set_viewport_input_context(bounds, mouse_input_enabled, keyboard_input_enabled);
         }
     }
 
@@ -158,6 +165,49 @@ public:
         }
 
         return ManipulationMode::NONE;
+    }
+
+    void select_entity(const entt::entity entity)
+    {
+        if (this->is_editor_mode && this->editor_viewport)
+        {
+            this->editor_viewport->select_entity(entity);
+        }
+    }
+
+    void clear_selection()
+    {
+        if (this->is_editor_mode && this->editor_viewport)
+        {
+            this->editor_viewport->clear_selection();
+        }
+    }
+
+    entt::entity spawn_primitive_in_front_of_camera(
+        Scene& scene,
+        CpuResourceManager& resource_manager,
+        const PrimitiveType primitive_type)
+    {
+        if (!this->is_editor_mode || !this->editor_viewport)
+        {
+            return entt::null;
+        }
+
+        EditorCamera& camera = this->editor_viewport->get_main_camera();
+        const glm::vec3 spawn_position = camera.get_position() + camera.get_direction() * 4.0f;
+        const entt::entity spawned_entity = EditorSceneFactory::spawn_primitive(
+            scene,
+            resource_manager,
+            primitive_type,
+            spawn_position
+        );
+
+        if (spawned_entity != entt::null)
+        {
+            this->editor_viewport->select_entity(spawned_entity);
+        }
+
+        return spawned_entity;
     }
 };
 

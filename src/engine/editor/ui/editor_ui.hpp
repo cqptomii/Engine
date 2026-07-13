@@ -8,9 +8,12 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 
+#include "engine/editor/ui/editor_context.hpp"
 #include "engine/editor/ui/viewport_framebuffer.hpp"
 #include "engine/editor/ui/viewport_layout.hpp"
+#include "engine/editor/ui/panels/hierarchy_panel.hpp"
 #include "engine/editor/ui/panels/log_panel.hpp"
+#include "engine/editor/ui/panels/properties_panel.hpp"
 
 class EditorUI {
     static constexpr const char* VIEWPORT_TITLE = "Viewport";
@@ -24,11 +27,13 @@ class EditorUI {
     bool show_log = true;
     bool request_layout_reset = false;
     bool viewport_panel_open = false;
+    bool viewport_image_hovered = false;
 
     ViewportFramebuffer viewport_framebuffer;
     ViewportClientBounds viewport_client_bounds{};
     bool viewport_hovered = false;
     ImVec2 pending_viewport_size{0.0f, 0.0f};
+    const EditorUIContext* frame_context = nullptr;
 
     void build_default_dock_layout(const ImGuiID dockspace_id, const ImVec2 dock_size) {
         ImGui::DockBuilderRemoveNode(dockspace_id);
@@ -104,6 +109,12 @@ class EditorUI {
         ImGui::End();
     }
 
+    void spawn_primitive_from_ui(const PrimitiveType primitive_type) {
+        if (this->frame_context != nullptr && this->frame_context->on_spawn_primitive) {
+            this->frame_context->on_spawn_primitive(primitive_type);
+        }
+    }
+
     void draw_menu_bar(GLFWwindow* window) {
         if (!ImGui::BeginMainMenuBar()) {
             return;
@@ -134,9 +145,15 @@ class EditorUI {
         }
 
         if (ImGui::BeginMenu("Create")) {
-            ImGui::MenuItem("Empty Object", nullptr, false, false);
-            ImGui::MenuItem("Cube", nullptr, false, false);
-            ImGui::MenuItem("Sphere", nullptr, false, false);
+            if (ImGui::MenuItem("Cube")) {
+                this->spawn_primitive_from_ui(PrimitiveType::Cube);
+            }
+            if (ImGui::MenuItem("Plane")) {
+                this->spawn_primitive_from_ui(PrimitiveType::Plane);
+            }
+            if (ImGui::MenuItem("Sphere")) {
+                this->spawn_primitive_from_ui(PrimitiveType::Sphere);
+            }
             ImGui::EndMenu();
         }
 
@@ -164,44 +181,17 @@ class EditorUI {
         this->viewport_client_bounds.height = rect_max.y - rect_min.y;
     }
 
-    void draw_hierarchy_panel() {
-        if (!this->show_hierarchy) {
-            return;
-        }
-
-        if (ImGui::Begin(HIERARCHY_TITLE, &this->show_hierarchy)) {
-            ImGui::TextUnformatted("Cube");
-            ImGui::TextUnformatted("Sphere");
-        }
-        ImGui::End();
-    }
-
-    void draw_properties_panel() {
-        if (!this->show_properties) {
-            return;
-        }
-
-        if (ImGui::Begin(PROPERTIES_TITLE, &this->show_properties)) {
-            ImGui::TextDisabled("No object selected.");
-            ImGui::Separator();
-            ImGui::Text("Transform");
-            ImGui::Text("Position");
-            ImGui::Text("Rotation");
-            ImGui::Text("Scale");
-        }
-        ImGui::End();
-    }
-
     void draw_log_panel() {
         editor_ui::draw_log_panel(LOG_TITLE, this->show_log);
     }
 
 public:
-    void begin_frame_ui(GLFWwindow* window) {
+    void begin_frame_ui(GLFWwindow* window, const EditorUIContext& context) {
+        this->frame_context = &context;
         this->draw_menu_bar(window);
         this->draw_dockspace_host();
-        this->draw_hierarchy_panel();
-        this->draw_properties_panel();
+        editor_ui::draw_hierarchy_panel(HIERARCHY_TITLE, this->show_hierarchy, context);
+        editor_ui::draw_properties_panel(PROPERTIES_TITLE, this->show_properties, context);
         this->draw_log_panel();
     }
 
@@ -233,16 +223,7 @@ public:
         layout.hovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows);
         this->viewport_hovered = layout.hovered;
 
-        const ImVec2 content_origin = ImGui::GetCursorScreenPos();
-        this->set_viewport_client_bounds_from_screen_rect(
-            content_origin,
-            ImVec2(
-                content_origin.x + this->pending_viewport_size.x,
-                content_origin.y + this->pending_viewport_size.y
-            )
-        );
-
-        return layout.render_width > 0 && layout.render_height > 0;
+        return true;
     }
 
     void end_viewport_panel(const std::function<void(const ViewportLayout&)>& render_viewport) {
@@ -270,13 +251,33 @@ public:
                     ImVec2(0.0f, 1.0f),
                     ImVec2(1.0f, 0.0f)
                 );
+                if (ImGui::BeginPopupContextItem("ViewportContextMenu")) {
+                    if (ImGui::BeginMenu("Add")) {
+                        if (ImGui::BeginMenu("Mesh")) {
+                            if (ImGui::MenuItem("Cube")) {
+                                this->spawn_primitive_from_ui(PrimitiveType::Cube);
+                            }
+                            if (ImGui::MenuItem("Plane")) {
+                                this->spawn_primitive_from_ui(PrimitiveType::Plane);
+                            }
+                            if (ImGui::MenuItem("Sphere")) {
+                                this->spawn_primitive_from_ui(PrimitiveType::Sphere);
+                            }
+                            ImGui::EndMenu();
+                        }
+                        ImGui::EndMenu();
+                    }
+                    ImGui::EndPopup();
+                }
                 this->set_viewport_client_bounds_from_screen_rect(
                     ImGui::GetItemRectMin(),
                     ImGui::GetItemRectMax()
                 );
+                this->viewport_image_hovered = ImGui::IsItemHovered();
             }
         } else {
             ImGui::TextDisabled("Viewport size is too small.");
+            this->viewport_image_hovered = false;
         }
 
         ImGui::End();
@@ -291,8 +292,13 @@ public:
         return this->viewport_client_bounds;
     }
 
-    [[nodiscard]] bool allows_viewport_input() const noexcept {
-        return this->viewport_hovered && this->viewport_client_bounds.is_valid();
+    [[nodiscard]] bool allows_viewport_mouse_input() const noexcept {
+        return this->viewport_image_hovered
+            && this->viewport_client_bounds.is_valid();
+    }
+
+    [[nodiscard]] bool allows_viewport_keyboard_input() const noexcept {
+        return !ImGui::GetIO().WantCaptureKeyboard;
     }
 
     [[nodiscard]] bool wants_capture_mouse() const {
