@@ -12,6 +12,7 @@
 #ifndef ENGINE_EDITOR_SYSTEM_HPP
 #define ENGINE_EDITOR_SYSTEM_HPP
 
+#include <algorithm>
 #include <vector>
 
 #include <entt/entt.hpp>
@@ -26,6 +27,7 @@
 #include "engine/editor/ui/viewport_layout.hpp"
 #include "engine/editor/ui/editor_context.hpp"
 #include "engine/editor/editor_scene_factory.hpp"
+#include "engine/scene/scene_hierarchy.hpp"
 
 #include <glm/glm.hpp>
 
@@ -193,13 +195,25 @@ public:
             return entt::null;
         }
 
+        const entt::entity parent = scene_hierarchy::resolve_spawn_parent(
+            scene,
+            this->editor_viewport->get_selected_objects()
+        );
+
         EditorCamera& camera = this->editor_viewport->get_main_camera();
-        const glm::vec3 spawn_position = camera.get_position() + camera.get_direction() * 4.0f;
+        const glm::vec3 world_spawn_position = camera.get_position() + camera.get_direction() * 4.0f;
+        const glm::vec3 local_spawn_position = scene_hierarchy::world_to_parent_local(
+            scene,
+            parent,
+            world_spawn_position
+        );
+
         const entt::entity spawned_entity = EditorSceneFactory::spawn_primitive(
             scene,
             resource_manager,
             primitive_type,
-            spawn_position
+            local_spawn_position,
+            parent
         );
 
         if (spawned_entity != entt::null)
@@ -208,6 +222,43 @@ public:
         }
 
         return spawned_entity;
+    }
+
+    entt::entity create_empty_node(Scene& scene, const entt::entity parent)
+    {
+        const entt::entity resolved_parent = parent != entt::null
+            ? parent
+            : scene_hierarchy::resolve_spawn_parent(scene, this->get_selected_objects());
+
+        const entt::entity created_entity = scene_hierarchy::create_empty_node(scene, resolved_parent);
+
+        if (this->is_editor_mode && this->editor_viewport && created_entity != entt::null)
+        {
+            this->editor_viewport->select_entity(created_entity);
+        }
+
+        return created_entity;
+    }
+
+    void delete_entity(Scene& scene, const entt::entity entity)
+    {
+        if (!this->is_editor_mode || !this->editor_viewport)
+        {
+            return;
+        }
+
+        const auto& selected = this->editor_viewport->get_selected_objects();
+        if (std::find(selected.begin(), selected.end(), entity) != selected.end())
+        {
+            this->editor_viewport->clear_selection();
+        }
+
+        scene_hierarchy::delete_entity(scene, entity);
+    }
+
+    void reparent_entity(Scene& scene, const entt::entity child, const entt::entity new_parent)
+    {
+        scene_hierarchy::set_parent(scene, child, new_parent);
     }
 };
 

@@ -7,6 +7,7 @@
 #include "engine/ecs/components/mesh_component.hpp"
 #include "engine/resources/cpu/mesh_resource.hpp"
 #include "engine/math/aabb.hpp"
+#include "engine/scene/scene_hierarchy.hpp"
 
 PickingResult pick_closest_entity(Scene& scene, const Ray& ray)
 {
@@ -26,7 +27,9 @@ PickingResult pick_closest_entity(Scene& scene, const Ray& ray)
             }
 
             MeshResource& mesh_resource = resource_manager.get_mesh(mesh_handle);
-            const AABB world_aabb = mesh_resource.get_local_bounds().transform_to_world(transform.get_model_matrix());
+            const AABB world_aabb = mesh_resource.get_local_bounds().transform_to_world(
+                scene_hierarchy::get_world_matrix(scene, entity)
+            );
 
             float hit_distance = 0.0f;
             if (!world_aabb.intersectsRay(ray, hit_distance))

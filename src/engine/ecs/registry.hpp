@@ -74,6 +74,11 @@ public:
     {
         return this->entt_registry;
     }
+
+    [[nodiscard]] const entt::registry& raw() const
+    {
+        return this->entt_registry;
+    }
 };
 
 #endif //REGISTRY_HPP

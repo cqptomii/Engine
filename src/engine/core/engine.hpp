@@ -46,6 +46,7 @@
 #include "engine/editor/ui/editor_context.hpp"
 #include "engine/editor/ui/viewport_layout.hpp"
 #include "engine/editor/ui/viewport_framebuffer.hpp"
+#include "engine/scene/scene_hierarchy.hpp"
 
 class Engine
 {
@@ -147,12 +148,15 @@ class Engine
         );
         const auto default_material_instance = this->resource_manager.create_material_instance(default_material);
 
+        const entt::entity scene_root = scene_hierarchy::ensure_root(this->current_scene);
+
         const entt::entity cube_entity = this->current_scene.add_object();
         const DebugNameComponent cube_name{"Cube"};
         this->current_scene.add_component(cube_entity, TransformComponent{glm::vec3(0.0f, 0.0f, 0.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(1.0f)});
         this->current_scene.add_component(cube_entity, cube_name);
         this->current_scene.add_component(cube_entity, MeshComponent{cube_mesh});
         this->current_scene.add_component(cube_entity, MaterialComponent{default_material_instance});
+        scene_hierarchy::set_parent(this->current_scene, cube_entity, scene_root);
         debug_register_name(cube_name.get_id(), cube_name.get_name());
 
         const auto sphere_mesh = MeshPrimitive3D::CreateUVSphere(this->resource_manager, "primitive/sphere/default");
@@ -162,6 +166,7 @@ class Engine
         this->current_scene.add_component(sphere_entity, sphere_name);
         this->current_scene.add_component(sphere_entity, MeshComponent{sphere_mesh});
         this->current_scene.add_component(sphere_entity, MaterialComponent{default_material_instance});
+        scene_hierarchy::set_parent(this->current_scene, sphere_entity, scene_root);
         debug_register_name(sphere_name.get_id(), sphere_name.get_name());
     }
 
@@ -288,6 +293,15 @@ public:
                             this->resource_manager,
                             primitive_type
                         );
+                    },
+                    [this](const entt::entity parent) {
+                        return this->editor_system.create_empty_node(this->current_scene, parent);
+                    },
+                    [this](const entt::entity entity) {
+                        this->editor_system.delete_entity(this->current_scene, entity);
+                    },
+                    [this](const entt::entity child, const entt::entity new_parent) {
+                        this->editor_system.reparent_entity(this->current_scene, child, new_parent);
                     }
                 }
             );

@@ -8,6 +8,7 @@
 #include <glm/glm.hpp>
 
 #include "engine/core/debug/debug_registration.hpp"
+#include "engine/scene/scene_hierarchy.hpp"
 #include "engine/ecs/components/debug_name_component.hpp"
 #include "engine/ecs/components/material_component.hpp"
 #include "engine/ecs/components/mesh_component.hpp"
@@ -18,39 +19,6 @@
 #include "engine/scene/Scene.hpp"
 
 class EditorSceneFactory {
-    static std::string make_unique_name(Scene& scene, const std::string& base_name) {
-        auto& registry = scene.get_registry().raw();
-        bool base_used = false;
-        int highest_suffix = 1;
-
-        if (registry.view<DebugNameComponent>().size() == 0) {
-            return base_name;
-        }
-
-        for (const auto entity : registry.view<DebugNameComponent>()) {
-            const std::string& existing_name = registry.get<DebugNameComponent>(entity).get_name();
-            if (existing_name == base_name) {
-                base_used = true;
-                continue;
-            }
-
-            const std::string prefix = base_name + " ";
-            if (existing_name.rfind(prefix, 0) == 0) {
-                try {
-                    const int suffix = std::stoi(existing_name.substr(prefix.size()));
-                    highest_suffix = std::max(highest_suffix, suffix);
-                } catch (...) {
-                }
-            }
-        }
-
-        if (!base_used) {
-            return base_name;
-        }
-
-        return base_name + " " + std::to_string(highest_suffix + 1);
-    }
-
     static ResourceHandle<MaterialInstance> get_default_material_instance(CpuResourceManager& resource_manager) {
         const auto default_material = resource_manager.load_material_resource(
             "material/default",
@@ -109,9 +77,10 @@ public:
         Scene& scene,
         CpuResourceManager& resource_manager,
         const PrimitiveType primitive_type,
-        const glm::vec3& position)
+        const glm::vec3& local_position,
+        const entt::entity parent)
     {
-        const std::string object_name = make_unique_name(scene, primitive_base_name(primitive_type));
+        const std::string object_name = scene_hierarchy::make_unique_name(scene, primitive_base_name(primitive_type));
         const auto mesh_handle = load_mesh_for_primitive(
             resource_manager,
             primitive_type,
@@ -123,13 +92,14 @@ public:
         const DebugNameComponent debug_name{object_name};
 
         scene.add_component(entity, TransformComponent{
-            position,
+            local_position,
             glm::quat(1.0f, 0.0f, 0.0f, 0.0f),
             glm::vec3(1.0f)
         });
         scene.add_component(entity, debug_name);
         scene.add_component(entity, MeshComponent{mesh_handle});
         scene.add_component(entity, MaterialComponent{material_instance});
+        scene_hierarchy::set_parent(scene, entity, parent);
         debug_register_name(debug_name.get_id(), debug_name.get_name());
 
         return entity;

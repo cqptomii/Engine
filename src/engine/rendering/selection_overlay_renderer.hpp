@@ -20,6 +20,7 @@
 #include "engine/resources/gpu/gpu_resource_manager.hpp"
 #include "engine/resources/gpu/shader.hpp"
 #include "engine/scene/Scene.hpp"
+#include "engine/scene/scene_hierarchy.hpp"
 
 class SelectionOverlayRenderer
 {
@@ -94,7 +95,7 @@ public:
                 continue;
             }
 
-            shader.set_mat4("model", transform.get_model_matrix());
+            shader.set_mat4("model", scene_hierarchy::get_world_matrix(scene, entity));
             mesh->draw();
         }
 

@@ -20,6 +20,7 @@
 
 #include <engine/rendering/renderer.hpp>
 #include <engine/rendering/render_queue.hpp>
+#include "engine/scene/scene_hierarchy.hpp"
 #include "engine/core/debug/debug_hooks.hpp"
 
 class RenderSystem
@@ -82,7 +83,7 @@ public:
                         cmd.material = &resource_manager.get_material_instance(selected_material);
 
                         // Set Transformation Matrix to get the relative position of the model to the main camera
-                        cmd.transform = transform.get_model_matrix();
+                        cmd.transform = scene_hierarchy::get_world_matrix(scene, e);
                         cmd.view = view;
                         cmd.projection = projection;
 
@@ -113,7 +114,7 @@ public:
                 cmd.mesh_handle = mesh_handle;
                 cmd.mesh = &mesh;
                 cmd.material = &resource_manager.get_material_instance(material_handle);
-                cmd.transform = transform.get_model_matrix();
+                cmd.transform = scene_hierarchy::get_world_matrix(scene, e);
                 cmd.view = view;
                 cmd.projection = projection;
 

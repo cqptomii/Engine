@@ -3,6 +3,7 @@
 #include "engine/ecs/components/transform_component.hpp"
 #include "engine/ecs/registry.hpp"
 #include "engine/scene/Scene.hpp"
+#include "engine/scene/scene_hierarchy.hpp"
 
 SelectionContext build_selection_context(Scene& scene, const std::vector<entt::entity>& entities)
 {
@@ -27,13 +28,13 @@ SelectionContext build_selection_context(Scene& scene, const std::vector<entt::e
             continue;
         }
 
-        const TransformComponent& transform = registry.get<TransformComponent>(entity);
-        position_sum += transform.get_position();
+        position_sum += scene_hierarchy::get_world_position(scene, entity);
 
-        // v1: gizmo frame = rotation of the first valid selected entity.
+        // v1: gizmo frame = rotation of the first valid selected entity (world orientation).
         if (!orientation_set)
         {
-            context.orientation = transform.get_rotation();
+            const glm::mat3 world_rotation = glm::mat3(scene_hierarchy::get_world_matrix(scene, entity));
+            context.orientation = glm::quat_cast(world_rotation);
             orientation_set = true;
         }
 

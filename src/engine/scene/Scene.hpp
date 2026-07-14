@@ -24,6 +24,11 @@ public:
     {
         return this->registry;
     }
+
+    [[nodiscard]] const Registry& get_registry() const
+    {
+        return this->registry;
+    }
     CpuResourceManager& get_resource_manager() const
     {
         return this->resource_manager;

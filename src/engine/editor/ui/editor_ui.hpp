@@ -298,7 +298,14 @@ public:
     }
 
     [[nodiscard]] bool allows_viewport_keyboard_input() const noexcept {
-        return !ImGui::GetIO().WantCaptureKeyboard;
+        const ImGuiIO& io = ImGui::GetIO();
+        if (io.WantTextInput) {
+            return false;
+        }
+        if (!io.WantCaptureKeyboard) {
+            return true;
+        }
+        return this->viewport_image_hovered && this->viewport_client_bounds.is_valid();
     }
 
     [[nodiscard]] bool wants_capture_mouse() const {

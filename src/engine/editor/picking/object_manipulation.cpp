@@ -1,5 +1,6 @@
 #include "engine/editor/picking/object_manipulation.hpp"
 #include "engine/ecs/components/transform_component.hpp"
+#include "engine/scene/scene_hierarchy.hpp"
 
 namespace {
     constexpr float k_translate_sensitivity = 0.01f;
@@ -59,15 +60,11 @@ void apply_manipulation(
         {
             case ManipulationMode::TRANSLATE:
             {
-                // Move in the camera plane: horizontal mouse -> view right,
-                // vertical mouse -> view up. Orbiting the camera lets the object
-                // reach any world-space direction (full 3D), instead of being
-                // stuck in the object local XY plane.
                 const glm::vec3 world_delta = camera_right * (delta_x * k_translate_sensitivity)
                                             + camera_up * (-delta_y * k_translate_sensitivity);
 
-                // Translate the entity
-                transform.translate(world_delta);
+                const glm::vec3 world_position = scene_hierarchy::get_world_position(scene, entity);
+                scene_hierarchy::set_world_position(scene, entity, world_position + world_delta);
                 break;
             }
             case ManipulationMode::ROTATE:
