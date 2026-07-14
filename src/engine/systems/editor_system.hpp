@@ -28,6 +28,7 @@
 #include "engine/editor/ui/editor_context.hpp"
 #include "engine/editor/editor_scene_factory.hpp"
 #include "engine/scene/scene_hierarchy.hpp"
+#include "engine/scene/scene_serializer.hpp"
 
 #include <glm/glm.hpp>
 
@@ -169,6 +170,14 @@ public:
         return ManipulationMode::NONE;
     }
 
+    void set_manipulation_mode(const ManipulationMode mode)
+    {
+        if (this->is_editor_mode && this->editor_viewport)
+        {
+            this->editor_viewport->set_manipulation_mode(mode);
+        }
+    }
+
     void select_entity(const entt::entity entity)
     {
         if (this->is_editor_mode && this->editor_viewport)
@@ -259,6 +268,42 @@ public:
     void reparent_entity(Scene& scene, const entt::entity child, const entt::entity new_parent)
     {
         scene_hierarchy::set_parent(scene, child, new_parent);
+    }
+
+    bool rename_entity(Scene& scene, const entt::entity entity, const std::string& new_name)
+    {
+        return scene_hierarchy::rename_entity(scene, entity, new_name);
+    }
+
+    void new_scene(Scene& scene)
+    {
+        if (this->is_editor_mode && this->editor_viewport)
+        {
+            this->editor_viewport->clear_selection();
+        }
+
+        scene_hierarchy::clear_scene(scene);
+        (void)scene_hierarchy::ensure_root(scene);
+    }
+
+    bool save_scene(Scene& scene, CpuResourceManager& resource_manager, const std::string& file_path)
+    {
+        return scene_serializer::save_scene(scene, resource_manager, file_path);
+    }
+
+    bool load_scene(Scene& scene, CpuResourceManager& resource_manager, const std::string& file_path)
+    {
+        if (!scene_serializer::load_scene(scene, resource_manager, file_path))
+        {
+            return false;
+        }
+
+        if (this->is_editor_mode && this->editor_viewport)
+        {
+            this->editor_viewport->clear_selection();
+        }
+
+        return true;
     }
 };
 

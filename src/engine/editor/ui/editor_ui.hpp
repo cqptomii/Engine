@@ -4,11 +4,14 @@
 #include <GLFW/glfw3.h>
 
 #include <functional>
+#include <array>
+#include <cstring>
 
 #include <imgui.h>
 #include <imgui_internal.h>
 
 #include "engine/editor/ui/editor_context.hpp"
+#include "engine/editor/picking/manipulation_mode.hpp"
 #include "engine/editor/ui/viewport_framebuffer.hpp"
 #include "engine/editor/ui/viewport_layout.hpp"
 #include "engine/editor/ui/panels/hierarchy_panel.hpp"
@@ -28,6 +31,11 @@ class EditorUI {
     bool request_layout_reset = false;
     bool viewport_panel_open = false;
     bool viewport_image_hovered = false;
+
+    bool show_save_scene_dialog = false;
+    bool show_load_scene_dialog = false;
+    std::array<char, 512> scene_path_buffer{};
+    bool scene_dialog_focus_pending = false;
 
     ViewportFramebuffer viewport_framebuffer;
     ViewportClientBounds viewport_client_bounds{};
@@ -122,10 +130,17 @@ class EditorUI {
 
         if (ImGui::BeginMenu("File")) {
             if (ImGui::MenuItem("New Scene", "Ctrl+N", false, false)) {
+                if (this->frame_context != nullptr && this->frame_context->on_new_scene) {
+                    this->frame_context->on_new_scene();
+                }
             }
             if (ImGui::MenuItem("Open Scene...", "Ctrl+O", false, false)) {
+                this->show_load_scene_dialog = true;
+                this->scene_dialog_focus_pending = true;
             }
             if (ImGui::MenuItem("Save Scene", "Ctrl+S", false, false)) {
+                this->show_save_scene_dialog = true;
+                this->scene_dialog_focus_pending = true;
             }
             ImGui::Separator();
             if (ImGui::MenuItem("Exit", "Alt+F4")) {
@@ -185,10 +200,110 @@ class EditorUI {
         editor_ui::draw_log_panel(LOG_TITLE, this->show_log);
     }
 
+    void draw_viewport_manipulation_toolbar() {
+        if (this->frame_context == nullptr || !this->frame_context->on_set_manipulation_mode) {
+            return;
+        }
+
+        const EditorUIContext& context = *this->frame_context;
+        const ManipulationMode current_mode = context.get_manipulation_mode
+            ? context.get_manipulation_mode()
+            : ManipulationMode::NONE;
+
+        const auto draw_mode_button = [&](const char* label, const ManipulationMode mode, const bool active) {
+            if (active) {
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.26f, 0.59f, 0.98f, 0.80f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.26f, 0.59f, 0.98f, 1.00f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.06f, 0.53f, 0.98f, 1.00f));
+            }
+
+            if (ImGui::Button(label)) {
+                context.on_set_manipulation_mode(mode);
+            }
+
+            if (active) {
+                ImGui::PopStyleColor(3);
+            }
+        };
+
+        const bool translate_active = current_mode == ManipulationMode::TRANSLATE;
+        const bool rotate_active = current_mode == ManipulationMode::ROTATE;
+        const bool scale_active = current_mode == ManipulationMode::SCALE_UNIFORM
+            || current_mode == ManipulationMode::SCALE_NON_UNIFORM;
+
+        draw_mode_button("Translate (G)", ManipulationMode::TRANSLATE, translate_active);
+        ImGui::SameLine();
+        draw_mode_button("Rotate (R)", ManipulationMode::ROTATE, rotate_active);
+        ImGui::SameLine();
+        draw_mode_button("Scale (S)", ManipulationMode::SCALE_UNIFORM, scale_active);
+    }
+
+    void draw_scene_file_dialogs() {
+        if (this->scene_path_buffer[0] == '\0') {
+            std::snprintf(
+                this->scene_path_buffer.data(),
+                this->scene_path_buffer.size(),
+                "%s",
+                "scenes/scene.scene"
+            );
+        }
+
+        if (this->show_save_scene_dialog) {
+            ImGui::OpenPopup("Save Scene");
+            this->show_save_scene_dialog = false;
+        }
+
+        if (this->show_load_scene_dialog) {
+            ImGui::OpenPopup("Load Scene");
+            this->show_load_scene_dialog = false;
+        }
+
+        ImGui::SetNextWindowSize(ImVec2(420.0f, 0.0f), ImGuiCond_Appearing);
+
+        if (ImGui::BeginPopupModal("Save Scene", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::TextUnformatted("Scene file path:");
+            if (this->scene_dialog_focus_pending) {
+                ImGui::SetKeyboardFocusHere();
+                this->scene_dialog_focus_pending = false;
+            }
+            ImGui::InputText("##scene_save_path", this->scene_path_buffer.data(), this->scene_path_buffer.size());
+
+            if (ImGui::Button("Save", ImVec2(120.0f, 0.0f))) {
+                if (this->frame_context != nullptr && this->frame_context->on_save_scene) {
+                    this->frame_context->on_save_scene(this->scene_path_buffer.data());
+                }
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel", ImVec2(120.0f, 0.0f))) {
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
+
+        if (ImGui::BeginPopupModal("Load Scene", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::TextUnformatted("Scene file path:");
+            ImGui::InputText("##scene_load_path", this->scene_path_buffer.data(), this->scene_path_buffer.size());
+
+            if (ImGui::Button("Load", ImVec2(120.0f, 0.0f))) {
+                if (this->frame_context != nullptr && this->frame_context->on_load_scene) {
+                    this->frame_context->on_load_scene(this->scene_path_buffer.data());
+                }
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel", ImVec2(120.0f, 0.0f))) {
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
+    }
+
 public:
     void begin_frame_ui(GLFWwindow* window, const EditorUIContext& context) {
         this->frame_context = &context;
         this->draw_menu_bar(window);
+        this->draw_scene_file_dialogs();
         this->draw_dockspace_host();
         editor_ui::draw_hierarchy_panel(HIERARCHY_TITLE, this->show_hierarchy, context);
         editor_ui::draw_properties_panel(PROPERTIES_TITLE, this->show_properties, context);
@@ -217,6 +332,7 @@ public:
         }
 
         this->viewport_panel_open = true;
+        this->draw_viewport_manipulation_toolbar();
         this->pending_viewport_size = ImGui::GetContentRegionAvail();
         layout.render_width = static_cast<int>(this->pending_viewport_size.x);
         layout.render_height = static_cast<int>(this->pending_viewport_size.y);
@@ -274,6 +390,24 @@ public:
                     ImGui::GetItemRectMax()
                 );
                 this->viewport_image_hovered = ImGui::IsItemHovered();
+
+                if (this->frame_context != nullptr) {
+                    const ImVec2 overlay_min = ImGui::GetItemRectMin();
+                    const ImVec2 overlay_max = ImGui::GetItemRectMax();
+                    const ManipulationMode current_mode = this->frame_context->get_manipulation_mode
+                        ? this->frame_context->get_manipulation_mode()
+                        : ManipulationMode::NONE;
+                    const char* mode_label = manipulation_mode_label(current_mode);
+
+                    ImDrawList* draw_list = ImGui::GetWindowDrawList();
+                    const ImVec2 text_pos(overlay_min.x + 8.0f, overlay_max.y - 28.0f);
+                    const ImVec2 text_size = ImGui::CalcTextSize(mode_label);
+                    const ImVec2 bg_min(text_pos.x - 6.0f, text_pos.y - 4.0f);
+                    const ImVec2 bg_max(text_pos.x + text_size.x + 6.0f, text_pos.y + text_size.y + 4.0f);
+
+                    draw_list->AddRectFilled(bg_min, bg_max, IM_COL32(20, 20, 20, 180), 4.0f);
+                    draw_list->AddText(text_pos, IM_COL32(240, 240, 240, 255), mode_label);
+                }
             }
         } else {
             ImGui::TextDisabled("Viewport size is too small.");

@@ -6,6 +6,7 @@
 #define ENGINE_HPP
 
 #include <iostream>
+#include <string>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
@@ -281,6 +282,12 @@ public:
                 EditorUIContext{
                     this->current_scene,
                     this->editor_system.get_selected_objects(),
+                    [this]() {
+                        return this->editor_system.get_manipulation_mode();
+                    },
+                    [this](const ManipulationMode mode) {
+                        this->editor_system.set_manipulation_mode(mode);
+                    },
                     [this](const entt::entity entity) {
                         this->editor_system.select_entity(entity);
                     },
@@ -302,6 +309,26 @@ public:
                     },
                     [this](const entt::entity child, const entt::entity new_parent) {
                         this->editor_system.reparent_entity(this->current_scene, child, new_parent);
+                    },
+                    [this](const entt::entity entity, const std::string& new_name) {
+                        return this->editor_system.rename_entity(this->current_scene, entity, new_name);
+                    },
+                    [this]() {
+                        this->editor_system.new_scene(this->current_scene);
+                    },
+                    [this](const std::string& path) {
+                        return this->editor_system.save_scene(
+                            this->current_scene,
+                            this->resource_manager,
+                            path
+                        );
+                    },
+                    [this](const std::string& path) {
+                        return this->editor_system.load_scene(
+                            this->current_scene,
+                            this->resource_manager,
+                            path
+                        );
                     }
                 }
             );

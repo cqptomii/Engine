@@ -587,6 +587,10 @@ public:
     const ManipulationMode& get_manipulation_mode() const{
         return this->pending_manipulation.mode;
     }
+
+    void set_manipulation_mode(const ManipulationMode mode) {
+        this->pending_manipulation.mode = mode;
+    }
 };
 
 

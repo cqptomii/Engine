@@ -144,9 +144,13 @@ add_executable(Engine
         src/engine/ecs/components/mesh_component.hpp
         src/engine/ecs/components/material_component.hpp
         src/engine/ecs/components/debug_name_component.hpp
+        src/engine/ecs/components/hierarchy_component.hpp
+        src/engine/ecs/components/scene_root_component.hpp
 
         ## Scene
         src/engine/scene/Scene.hpp
+        src/engine/scene/scene_hierarchy.hpp
+        src/engine/scene/scene_serializer.hpp
         src/engine/scene/SceneManager.hpp
 
         ## Editor
@@ -168,10 +172,14 @@ add_executable(Engine
         src/engine/editor/gizmo/gizmo_manipulator.cpp
         src/engine/editor/ui/imgui_layer.hpp
         src/engine/editor/ui/editor_ui.hpp
+        src/engine/editor/ui/editor_context.hpp
         src/engine/editor/ui/viewport_framebuffer.hpp
         src/engine/editor/ui/viewport_layout.hpp
         src/engine/editor/ui/panels/debug_panel.hpp
         src/engine/editor/ui/panels/log_panel.hpp
+        src/engine/editor/ui/panels/hierarchy_panel.hpp
+        src/engine/editor/ui/panels/properties_panel.hpp
+        src/engine/editor/editor_scene_factory.hpp
 
         ## Systems
         src/engine/systems/isystem.hpp

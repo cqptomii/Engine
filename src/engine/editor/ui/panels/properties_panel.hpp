@@ -55,16 +55,17 @@ inline void draw_properties_panel(const char* title, bool& show_panel, const Edi
     glm::vec3 rotation_euler = glm::degrees(glm::eulerAngles(transform.get_rotation()));
 
     ImGui::SeparatorText("Transform");
+    ImGui::TextDisabled("Drag to scrub, or click a value and type.");
 
-    if (ImGui::DragFloat3("Position", &position.x, 0.05f)) {
+    if (ImGui::DragFloat3("Position", &position.x, 0.05f, 0.0f, 0.0f, "%.3f")) {
         transform.set_position(position);
     }
 
-    if (ImGui::DragFloat3("Rotation", &rotation_euler.x, 0.5f)) {
+    if (ImGui::DragFloat3("Rotation", &rotation_euler.x, 0.5f, 0.0f, 0.0f, "%.3f")) {
         transform.set_rotation(glm::quat(glm::radians(rotation_euler)));
     }
 
-    if (ImGui::DragFloat3("Scale", &scale.x, 0.02f, 0.01f, 100.0f)) {
+    if (ImGui::DragFloat3("Scale", &scale.x, 0.02f, 0.01f, 100.0f, "%.3f")) {
         transform.set_scale(scale);
     }
 

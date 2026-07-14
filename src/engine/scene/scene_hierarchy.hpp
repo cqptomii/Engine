@@ -187,16 +187,45 @@ inline void collect_descendants(const Scene& scene, const entt::entity root, std
     }
 }
 
-[[nodiscard]] inline std::string make_unique_name(Scene& scene, const std::string& base_name) {
+inline void clear_scene(Scene& scene) {
+    scene.get_registry().raw().clear();
+}
+
+inline void delete_entity_cascade(Scene& scene, const entt::entity entity) {
+    entt::registry& registry = scene.get_registry().raw();
+    if (!registry.valid(entity) || registry.all_of<SceneRootComponent>(entity)) {
+        return;
+    }
+
+    std::vector<entt::entity> to_delete;
+    collect_descendants(scene, entity, to_delete);
+    to_delete.push_back(entity);
+
+    for (auto it = to_delete.rbegin(); it != to_delete.rend(); ++it) {
+        if (registry.valid(*it)) {
+            scene.remove_object(*it);
+        }
+    }
+}
+
+inline void delete_entity(Scene& scene, const entt::entity entity) {
+    delete_entity_cascade(scene, entity);
+}
+
+[[nodiscard]] inline std::string make_unique_name(
+    Scene& scene,
+    const std::string& base_name,
+    const entt::entity exclude_entity = entt::null)
+{
     const entt::registry& registry = scene.get_registry().raw();
     bool base_used = false;
     int highest_suffix = 1;
 
-    if (registry.view<DebugNameComponent>().size() == 0) {
-        return base_name;
-    }
-
     for (const auto entity : registry.view<DebugNameComponent>()) {
+        if (entity == exclude_entity) {
+            continue;
+        }
+
         const std::string& existing_name = registry.get<DebugNameComponent>(entity).get_name();
         if (existing_name == base_name) {
             base_used = true;
@@ -220,6 +249,28 @@ inline void collect_descendants(const Scene& scene, const entt::entity root, std
     return base_name + " " + std::to_string(highest_suffix + 1);
 }
 
+inline bool rename_entity(Scene& scene, const entt::entity entity, std::string new_name) {
+    entt::registry& registry = scene.get_registry().raw();
+    if (!registry.valid(entity) || !registry.all_of<DebugNameComponent>(entity)) {
+        return false;
+    }
+
+    if (new_name.empty()) {
+        return false;
+    }
+
+    if (registry.all_of<SceneRootComponent>(entity)) {
+        new_name = k_scene_root_name;
+    } else {
+        new_name = make_unique_name(scene, new_name, entity);
+    }
+
+    DebugNameComponent& debug_name = registry.get<DebugNameComponent>(entity);
+    debug_name.set_name(new_name);
+    debug_register_name(debug_name.get_id(), debug_name.get_name());
+    return true;
+}
+
 [[nodiscard]] inline entt::entity create_empty_node(
     Scene& scene,
     const entt::entity parent,
@@ -235,20 +286,6 @@ inline void collect_descendants(const Scene& scene, const entt::entity root, std
     debug_register_name(debug_name.get_id(), debug_name.get_name());
 
     return entity;
-}
-
-inline void delete_entity(Scene& scene, const entt::entity entity) {
-    entt::registry& registry = scene.get_registry().raw();
-    if (!registry.valid(entity) || registry.all_of<SceneRootComponent>(entity)) {
-        return;
-    }
-
-    const entt::entity parent = get_parent(scene, entity);
-    for (const entt::entity child : get_children(scene, entity)) {
-        set_parent(scene, child, parent);
-    }
-
-    scene.remove_object(entity);
 }
 
 [[nodiscard]] inline entt::entity resolve_spawn_parent(

@@ -41,5 +41,20 @@ enum class ManipulationMode{
     ManipulationMode mode = ManipulationMode::NONE;
 };
 
+inline const char* manipulation_mode_label(const ManipulationMode mode) {
+    switch (mode) {
+        case ManipulationMode::TRANSLATE:
+            return "Translate (G)";
+        case ManipulationMode::ROTATE:
+            return "Rotate (R)";
+        case ManipulationMode::SCALE_UNIFORM:
+        case ManipulationMode::SCALE_NON_UNIFORM:
+            return "Scale (S)";
+        case ManipulationMode::NONE:
+        default:
+            return "None";
+    }
+}
+
 
 #endif

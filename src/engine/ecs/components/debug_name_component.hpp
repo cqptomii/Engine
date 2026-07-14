@@ -46,6 +46,11 @@ class  DebugNameComponent {
     std::string get_name() const {
         return name;
     }
+
+    void set_name(std::string new_name) {
+        this->name = std::move(new_name);
+        this->id = DebugId::from_name(this->name);
+    }
 };
 
 #endif // ENGINE_DEBUG_NAME_COMPONENT_HPP
