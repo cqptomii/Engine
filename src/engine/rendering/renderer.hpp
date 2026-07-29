@@ -108,8 +108,10 @@ public:
             // Use the Shader
             shader->use();
 
+            // Update Shader Uniform related to the Material parameters and texture bindings.
+            // apply_parameter() advances the slot itself, so only texture parameters consume
+            // a texture unit.
             int texture_slot = 0;
-            // Update Shader Uniform related to the Material parameters and texture bindings
             for (const auto& parameter : parameters | std::views::values)
             {
                 this->apply_parameter(
@@ -118,15 +120,16 @@ public:
                     texture_slot,
                     resource_manager
                 );
-
-                texture_slot++;
             }
 
             // Draw the mesh on the viewport
             mesh->draw();
         }
     }
-    void apply_parameter(Shader& shader, const MaterialParameter& parameter,int texture_slot, CpuResourceManager& resource_manager)
+    /**
+     * @param texture_slot In/out next free texture unit, advanced when a texture is bound.
+     */
+    void apply_parameter(Shader& shader, const MaterialParameter& parameter,int& texture_slot, CpuResourceManager& resource_manager)
     {
 
         std::visit([&](auto&& value)
@@ -137,7 +140,12 @@ public:
             {
                 const Texture* texture = this->gpu_resource_manager->get_texture(value, resource_manager.get_texture(value));
                 
-                texture->bind(texture_slot);
+                texture->bind(static_cast<GLenum>(texture_slot));
+
+                // The sampler uniform must point at the unit the texture was bound to,
+                // otherwise the shader samples unit 0 whatever the material declares.
+                shader.set_int(parameter.name, texture_slot);
+                ++texture_slot;
             }
             else if constexpr (std::is_same_v<T, float>)
             {

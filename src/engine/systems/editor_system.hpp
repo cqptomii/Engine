@@ -12,7 +12,6 @@
 #ifndef ENGINE_EDITOR_SYSTEM_HPP
 #define ENGINE_EDITOR_SYSTEM_HPP
 
-#include <algorithm>
 #include <vector>
 
 #include <entt/entt.hpp>
@@ -256,13 +255,11 @@ public:
             return;
         }
 
-        const auto& selected = this->editor_viewport->get_selected_objects();
-        if (std::find(selected.begin(), selected.end(), entity) != selected.end())
-        {
-            this->editor_viewport->clear_selection();
-        }
-
         scene_hierarchy::delete_entity(scene, entity);
+
+        // The delete is recursive: purge every destroyed entity from the selection instead
+        // of only the one passed in, otherwise descendants stay selected as dangling handles.
+        this->editor_viewport->prune_invalid_selection(scene);
     }
 
     void reparent_entity(Scene& scene, const entt::entity child, const entt::entity new_parent)

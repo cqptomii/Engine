@@ -175,17 +175,19 @@ public:
             }
 
             if (e.get_action_name() == "pick_one_object"
-                || e.get_action_name() == "pick_multiple_objects"
-                || e.get_action_name() == "pick_all_objects") {
+                || e.get_action_name() == "pick_multiple_objects") {
                 if (!this->viewport_input_enabled) {
                     return;
                 }
             }
 
+            // "pick_all_objects" is a keyboard shortcut (A), so it follows the keyboard gate
+            // like G/R/S: it must not fire while a panel is capturing text input.
             if (e.get_action_name() == "manipulation_mode_translate"
                 || e.get_action_name() == "manipulation_mode_rotate"
                 || e.get_action_name() == "manipulation_mode_scale"
-                || e.get_action_name() == "manipulation_mode_none") {
+                || e.get_action_name() == "manipulation_mode_none"
+                || e.get_action_name() == "pick_all_objects") {
                 if (!this->viewport_keyboard_enabled) {
                     return;
                 }
@@ -370,6 +372,21 @@ public:
     }
 
     /**
+     * @brief Drop selected entities that no longer exist in the scene.
+     *
+     * @param scene (const Scene&) : Scene reference to validate the selection against
+     * @details A cascade delete also removes the descendants of the deleted entity, so the
+     * selection can still reference destroyed entities after a hierarchy edit.
+     */
+    void prune_invalid_selection(const Scene& scene) {
+        const entt::registry& registry = scene.get_registry().raw();
+
+        std::erase_if(this->selected_objects, [&registry](const entt::entity entity) {
+            return entity == entt::null || !registry.valid(entity);
+        });
+    }
+
+    /**
      * @brief Set the viewport render target size used for projection and picking.
      */
     void set_viewport_render_size(const int width, const int height) {
@@ -469,10 +486,14 @@ public:
             pick_all_objects = false;
             }
         }else if (pick_all_objects){
-            // Pick all entities in the scene
-            std::vector<entt::entity> all_entities = pick_all_entities(scene);
-            // Set the selected objects to the all entities
-            selected_objects = all_entities;
+            // Select-all only applies when the viewport owns the keyboard, but the flag is
+            // consumed either way so it cannot fire on a later frame.
+            if (this->viewport_keyboard_enabled){
+                // Pick all entities in the scene
+                std::vector<entt::entity> all_entities = pick_all_entities(scene);
+                // Set the selected objects to the all entities
+                selected_objects = all_entities;
+            }
             // Reset the picking mode flags
             pick_all_objects = false;
         }

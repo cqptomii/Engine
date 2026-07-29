@@ -8,6 +8,7 @@
 #include "engine/ecs/components/transform_component.hpp"
 #include "engine/ecs/registry.hpp"
 #include "engine/scene/Scene.hpp"
+#include "engine/scene/scene_hierarchy.hpp"
 
 namespace
 {
@@ -137,8 +138,12 @@ void apply_gizmo_manipulation(Scene& scene, const std::vector<entt::entity>& ent
         {
             case ManipulationMode::TRANSLATE:
             {
+                // The axis and the drag delta are both world-space, so the move must be
+                // applied through the hierarchy: TransformComponent::translate() works in
+                // local space and would drift under a rotated or scaled parent.
                 const glm::vec3 world_delta = axis_world * (screen_amount * distance * k_translate_sensitivity);
-                transform.translate(world_delta);
+                const glm::vec3 world_position = scene_hierarchy::get_world_position(scene, entity);
+                scene_hierarchy::set_world_position(scene, entity, world_position + world_delta);
                 break;
             }
             case ManipulationMode::ROTATE:
