@@ -1,3 +1,12 @@
+/**
+ * @file gizmo_picker.hpp
+ * @author FRAISSE Tom
+ * @brief Gizmo picker class for the editor
+ * @details This class is responsible for the picking of the gizmo in the editor
+ * @version 0.1
+ * @date 2026-07-29
+ * @copyright Copyright (c) 2026
+ */
 #ifndef GIZMO_PICKER_HPP
 #define GIZMO_PICKER_HPP
 

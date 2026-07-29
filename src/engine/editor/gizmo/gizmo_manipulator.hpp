@@ -1,3 +1,14 @@
+/**
+ * @file gizmo_manipulator.hpp
+ * @author FRAISSE Tom
+ * @brief Gizmo manipulator class for the editor
+ * @details This class is responsible for the manipulation of the gizmo in the editor
+ * @version 0.1
+ * @date 2026-07-29
+ * 
+ * @copyright Copyright (c) 2026
+ * 
+ */
 #ifndef GIZMO_MANIPULATOR_HPP
 #define GIZMO_MANIPULATOR_HPP
 

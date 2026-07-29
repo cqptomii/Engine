@@ -1,3 +1,13 @@
+/**
+ * @file debug_panel.hpp    
+ * @author Tom FRAISSE
+ * @brief Header file for the debug panel
+ * @version 0.1
+ * @date 2026-07-29
+ * 
+ * @copyright Copyright (c) 2026
+ * 
+ */
 #ifndef ENGINE_DEBUG_PANEL_HPP
 #define ENGINE_DEBUG_PANEL_HPP
 
@@ -13,6 +23,13 @@
 
 namespace editor_ui {
 
+/**
+ * @brief Method to get the color of a log within his level
+ * 
+ * @param level The log level to get the color of
+ * @return ImVec4 The color of the log level
+ * @return ImVec4 
+ */
 inline ImVec4 log_level_color(const LogLevel level) {
     switch (level) {
         case LogLevel::Trace:
@@ -28,6 +45,13 @@ inline ImVec4 log_level_color(const LogLevel level) {
     }
 }
 
+/**
+ * @brief Method to get the label of a log level
+ * 
+ * @param level The log level to get the label of
+ * @return const char* The label of the log level
+ * @return const char* 
+ */
 inline const char* log_level_label(const LogLevel level) {
     switch (level) {
         case LogLevel::Trace:
@@ -43,19 +67,29 @@ inline const char* log_level_label(const LogLevel level) {
     }
 }
 
+/**
+ * @brief Method to draw the debug live panel and its contents onto the ImGui window
+ * 
+ * @return void
+ */
 inline void draw_debug_live_panel() {
+    // Check if the debug panel is in debug mode
 #ifdef ENGINE_DEBUG
+
+    // Get the frame stats
     const FrameStats& frame_stats = Instrumentation::frame_stats();
     const float frame_ms = frame_stats.get_frame_ms();
     const float delta_time = frame_stats.get_delta_time();
     const float fps = delta_time > 0.0f ? 1.0f / delta_time : 0.0f;
 
+    // Draw the frame stats on the ImGui window
     ImGui::SeparatorText("Frame");
     ImGui::Text("FPS: %.1f", fps);
     ImGui::Text("Frame time: %.3f ms", frame_ms);
     ImGui::Text("Delta time: %.4f s", delta_time);
     ImGui::Text("Smoothed FPS: %.1f", Instrumentation::console().get_fps());
 
+    // Draw the profiler on the ImGui window
     ImGui::SeparatorText("Profiler (last frame)");
     const Profiler& profiler = Instrumentation::profiler();
     if (profiler.scopes().empty()) {
@@ -67,6 +101,7 @@ inline void draw_debug_live_panel() {
         ImGui::Text("Scoped total: %.3f ms", profiler.frame_total());
     }
 
+    // Draw the counters on the ImGui window
     ImGui::SeparatorText("Counters (current frame)");
     const CounterRegistry& counters = Instrumentation::counters();
     bool has_counters = false;
@@ -82,9 +117,11 @@ inline void draw_debug_live_panel() {
         ImGui::TextDisabled("No counters this frame.");
     }
 
+    // Draw the events on the ImGui window
     ImGui::SeparatorText("Events (current frame)");
     ImGui::Text("Total: %u", Instrumentation::event_stats().get_frame_total_events());
 
+    // Draw the memory on the ImGui window
     ImGui::SeparatorText("Memory");
     const MemoryTracker& memory = Instrumentation::memory();
     const CpuResourceCounts& cpu = memory.cpu();
@@ -100,10 +137,12 @@ inline void draw_debug_live_panel() {
     ImGui::Text("GPU shaders: %zu", gpu.shaders);
     ImGui::Text("GPU UBOs: %zu", gpu.ubos);
 
+    // Draw the debug names on the ImGui window
     ImGui::SeparatorText("Debug names");
     const DebugNameRegistry& names = Instrumentation::names();
     ImGui::Text("Registered: %zu", names.count());
 
+    // Get the debug names
     std::vector<std::pair<DebugId, std::string>> debug_names = names.get_entries();
     std::sort(
         debug_names.begin(),
@@ -113,22 +152,28 @@ inline void draw_debug_live_panel() {
         }
     );
 
+    // Check if the debug names are empty
     if (debug_names.empty()) {
         ImGui::TextDisabled("No debug names registered.");
     } else if (ImGui::BeginTable("DebugNamesTable", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY, ImVec2(0.0f, 120.0f))) {
+        // Setup the columns
         ImGui::TableSetupColumn("Name");
         ImGui::TableSetupColumn("Id");
         ImGui::TableSetupScrollFreeze(0, 1);
+        // Draw the headers
         ImGui::TableHeadersRow();
 
         for (const auto& [id, name] : debug_names) {
+            // Draw the next row
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
             ImGui::TextUnformatted(name.c_str());
+            // Draw the id
             ImGui::TableSetColumnIndex(1);
             ImGui::Text("%u", id.value());
         }
 
+        // End the table
         ImGui::EndTable();
     }
 #else

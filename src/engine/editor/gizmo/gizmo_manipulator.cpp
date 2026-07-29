@@ -11,42 +11,61 @@
 
 namespace
 {
+    // The translate sensitivity
     constexpr float k_translate_sensitivity = 0.0025f;
     constexpr float k_scale_sensitivity     = 0.01f;
 
+    /**
+     * @brief Method to get the world direction of an axis
+     * 
+     * @param ctx The selection context
+     * @param axis The axis
+     * @return glm::vec3 The world direction of the axis
+     */
     glm::vec3 axis_world_direction(const SelectionContext& ctx, GizmoAxis axis)
     {
+        // Get the basis of the orientation
         const glm::mat3 basis = glm::mat3_cast(ctx.orientation);
+        // Return the world direction of the axis
         switch (axis)
         {
-            case GizmoAxis::X: return glm::normalize(basis * glm::vec3(1.0f, 0.0f, 0.0f));
+            case GizmoAxis::X:  return glm::normalize(basis * glm::vec3(1.0f, 0.0f, 0.0f));
             case GizmoAxis::Y: return glm::normalize(basis * glm::vec3(0.0f, 1.0f, 0.0f));
             case GizmoAxis::Z: return glm::normalize(basis * glm::vec3(0.0f, 0.0f, 1.0f));
             default:           return glm::vec3(0.0f);
         }
     }
 
-    // Signed cursor motion (in NDC units) along the on-screen projection of the axis.
-    float screen_amount_along_axis(
-        const SelectionContext& ctx,
-        const glm::vec3& axis_world,
-        const CameraData& camera,
-        float delta_x,
-        float delta_y)
+    /**
+     * @brief Method to get the screen amount along an axis
+     * 
+     * @param ctx The selection context
+     * @param axis_world The world direction of the axis
+     * @param camera The camera data
+     * @param delta_x The delta x
+     * @param delta_y The delta y
+     * @return float The screen amount along the axis
+     */
+    float screen_amount_along_axis(const SelectionContext& ctx,const glm::vec3& axis_world, const CameraData& camera, float delta_x, float delta_y)
     {
+        // Get the view projection matrix
         const glm::mat4 view_proj = camera.projection * camera.view;
 
+        // Get the clip space positions of the pivot
         const glm::vec4 clip0 = view_proj * glm::vec4(ctx.pivot_world, 1.0f);
         const glm::vec4 clip1 = view_proj * glm::vec4(ctx.pivot_world + axis_world, 1.0f);
 
         if (glm::abs(clip0.w) < 1e-5f || glm::abs(clip1.w) < 1e-5f)
         {
+            // If the pivot is too close to the camera, return the delta x
             return delta_x;
         }
 
+        // Get the NDC positions of the pivot
         const glm::vec2 ndc0 = glm::vec2(clip0) / clip0.w;
         const glm::vec2 ndc1 = glm::vec2(clip1) / clip1.w;
 
+        // Get the screen direction
         glm::vec2 screen_dir = ndc1 - ndc0;
         if (glm::length(screen_dir) < 1e-6f)
         {
@@ -60,37 +79,48 @@ namespace
     }
 }
 
-void apply_gizmo_manipulation(
-    Scene& scene,
-    const std::vector<entt::entity>& entities,
-    ManipulationMode mode,
-    GizmoAxis axis,
-    const SelectionContext& ctx,
-    const CameraData& camera,
-    float delta_x,
-    float delta_y)
+
+/**
+ * @brief Method to apply the gizmo manipulation
+ * 
+ * @param scene The scene
+ * @param entities The entities
+ * @param mode The manipulation mode
+ * @param axis The axis
+ * @param ctx The selection context
+ * @param camera The camera data
+ * @param delta_x The delta x
+ * @param delta_y The delta y
+ */
+void apply_gizmo_manipulation(Scene& scene, const std::vector<entt::entity>& entities, ManipulationMode mode, GizmoAxis axis,  const SelectionContext& ctx, const CameraData& camera, float delta_x, float delta_y)
 {
+    // If the entities are empty, the axis is none, or the mode is none, return
     if (entities.empty() || axis == GizmoAxis::NONE || mode == ManipulationMode::NONE)
     {
         return;
     }
 
+    // If the delta x and delta y are 0, return
     if (delta_x == 0.0f && delta_y == 0.0f)
     {
         return;
     }
 
+    // Get the world direction of the axis
     const glm::vec3 axis_world = axis_world_direction(ctx, axis);
     if (glm::length(axis_world) < 1e-6f)
     {
         return;
     }
 
+    // Get the screen amount along the axis
     const float screen_amount = screen_amount_along_axis(ctx, axis_world, camera, delta_x, delta_y);
     const float distance = glm::max(glm::length(camera.position - ctx.pivot_world), 0.001f);
     const int axis_index = static_cast<int>(axis);
 
+    // Get the registry
     Registry& registry = scene.get_registry();
+    // Get the raw registry
     entt::registry& entt_registry = registry.raw();
 
     for (const entt::entity entity : entities)
@@ -102,6 +132,7 @@ void apply_gizmo_manipulation(
 
         TransformComponent& transform = registry.get<TransformComponent>(entity);
 
+        // Apply the manipulation based on the mode
         switch (mode)
         {
             case ManipulationMode::TRANSLATE:
@@ -133,38 +164,50 @@ void apply_gizmo_manipulation(
     }
 }
 
-bool gizmo_ring_plane_dir(
-    const Ray& ray,
-    const SelectionContext& ctx,
-    GizmoAxis axis,
-    glm::vec3& out_dir)
+/**
+ * @brief Method to get the direction of the gizmo ring plane
+ * 
+ * @param ray The ray
+ * @param ctx The selection context
+ * @param axis The axis
+ * @param out_dir The output direction
+ * @return true If the direction is valid
+ * @return false If the direction is not valid
+ */
+bool gizmo_ring_plane_dir(const Ray& ray, const SelectionContext& ctx, GizmoAxis axis, glm::vec3& out_dir)
 {
+    // If the context is not valid or the axis is none, return false
     if (!ctx.valid || axis == GizmoAxis::NONE)
     {
         return false;
     }
 
+    // Get the normal of the axis
     const glm::vec3 normal = axis_world_direction(ctx, axis);
     if (glm::length(normal) < 1e-6f)
     {
         return false;
     }
 
+    // Get the origin and direction of the ray
     const glm::vec3 ro = ray.getOrigin();
     const glm::vec3 rd = ray.getDirection();
 
+    // Get the denominator of the ray
     const float denom = glm::dot(rd, normal);
     if (glm::abs(denom) < 1e-5f)
     {
         return false;
     }
 
+    // Get the time of the ray
     const float t = glm::dot(ctx.pivot_world - ro, normal) / denom;
     if (t < 0.0f)
     {
         return false;
     }
 
+    // Get the hit point of the ray
     const glm::vec3 hit = ro + rd * t;
     const glm::vec3 radial = hit - ctx.pivot_world;
     if (glm::length(radial) < 1e-6f)
@@ -176,22 +219,29 @@ bool gizmo_ring_plane_dir(
     return true;
 }
 
-void apply_gizmo_rotation_drag(
-    Scene& scene,
-    const std::vector<entt::entity>& entities,
-    GizmoAxis axis,
-    const SelectionContext& ctx,
-    const glm::vec3& prev_dir,
-    const glm::vec3& cur_dir)
+/**
+ * @brief Method to apply the gizmo rotation drag
+ * 
+ * @param scene The scene
+ * @param entities The entities
+ * @param axis The axis
+ * @param ctx The selection context
+ * @param prev_dir The previous direction
+ * @param cur_dir The current direction
+ */
+void apply_gizmo_rotation_drag(Scene& scene, const std::vector<entt::entity>& entities, GizmoAxis axis, const SelectionContext& ctx, const glm::vec3& prev_dir, const glm::vec3& cur_dir)
 {
+    // If the entities are empty or the axis is none, return
     if (entities.empty() || axis == GizmoAxis::NONE)
     {
         return;
     }
 
+    // Get the world direction of the axis
     const glm::vec3 axis_world = axis_world_direction(ctx, axis);
     if (glm::length(axis_world) < 1e-6f)
     {
+        // If the axis world is not valid, return
         return;
     }
 
