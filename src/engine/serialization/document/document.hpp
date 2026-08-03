@@ -12,8 +12,6 @@
 #define DOCUMENT_HPP
 
 #include "engine/serialization/tokenizer/token.hpp"
-#include "engine/serialization/parser/parser.hpp"
-#include <optional>
 #include <string_view>
 #include <cstdint>
 #include <string>
@@ -21,6 +19,7 @@
 #include <span>
 #include <optional>
 
+class Parser;
 class BlockView;
 
 /**
@@ -82,7 +81,7 @@ private:
      * @param source : The source string of the document
      */
     friend class Parser;
-    explicit Document(std::string_view source) noexcept : source_(std::move(source)) {}
+    explicit Document(std::string source) noexcept : source_(std::move(source)) {}
 
 public:
     /**
@@ -91,7 +90,7 @@ public:
      * @param source : The source string of the document
      * @return Document : The document object
      */
-    static Document parse(std::string_view source) noexcept;
+    static Document parse(std::string source);
 
     /**
      * @brief Method used to check if the document is empty
