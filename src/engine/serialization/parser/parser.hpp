@@ -57,20 +57,85 @@ public:
     Parser& operator=(const Parser&) = delete;
     Parser(Parser&&) = delete;
 
+
+    //
+    // Parsing methods
+    //
+
+    void parse_document();
+    void parse_block();
+    
+    void parse_property();
+
+
+    //
+    // Helpers methods
+    //
+
     /**
      * @brief Method used to get the token at the current index + the offset
      * 
      * @param offset : The offset to the current index
      * @return const Token& : The token at the current index + the offset
      */
-    const Token& peek(std::size_t offset = 0) const;
+    const Token& peek(std::size_t offset = 0) const{
+        // Get the index to peek
+        std::size_t peek_index = index_ + offset;
+
+        // Check if the index is out of bounds
+        if (peek_index >= tokens_.size()) return tokens_.back();
+
+        // Return the token at the index
+        return tokens_[peek_index];
+    }
 
     /**
      * @brief Method used to advance the current index to the next token
      * 
      * @return const Token& : The token at the current index
      */
-    const Token& advance();
+    const Token& advance(){
+        if (index_ >= tokens_.size()) return tokens_.back();
+        
+        // Return the token at the current index and increment the index
+        return tokens_[index_++];
+    }
+
+    /**
+     * @brief Method used to check if the current token is of the given TokenType
+     * 
+     * @param kind : The TokenType to check
+     * @return true : If the current token is of the given TokenType
+     * @return false : If the current token is not of the given TokenType
+     */
+    bool expect(TokenType kind){
+        // Check if the current token is of the given TokenType
+        if(peek().token_type == kind){
+            // Advance the current index
+            advance();
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * @brief Method used to check if the given token is a value token
+     * @details A value is a token within TokenType Number, String or Identifier
+     * @param token : The token to check
+     * @return true : If the token is a value token
+     * @return false : If the token is not a value token
+     */
+    bool is_value_token(const Token& token) const{
+        switch (token.token_type) {
+            case TokenType::Number:
+            case TokenType::String:
+            case TokenType::Identifier:
+                return true;
+            default:
+                return false;
+        }
+    }
    
 
     bool set_tokens(std::vector<Token> tokens){

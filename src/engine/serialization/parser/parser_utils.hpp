@@ -36,7 +36,7 @@ inline bool parse_float(std::string_view data, float& out){
     );
 
     // Check if the parsing was successful
-    if(result.ec == std::errc{} || result.ptr != data.data() + data.size()) {
+    if(result.ec != std::errc{} || result.ptr != data.data() + data.size()) {
         return false;
     }
 
