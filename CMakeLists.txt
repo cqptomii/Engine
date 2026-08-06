@@ -153,6 +153,16 @@ add_executable(Engine
         src/engine/scene/scene_serializer.hpp
         src/engine/scene/SceneManager.hpp
 
+        ## Serialization
+        src/engine/serialization/document/blockview.hpp
+        src/engine/serialization/document/document.hpp
+        src/engine/serialization/document/document.cpp
+        src/engine/serialization/tokenizer/token.hpp
+        src/engine/serialization/tokenizer/tokenizer.hpp
+        src/engine/serialization/parser/parser.hpp
+        src/engine/serialization/parser/parser_utils.hpp
+
+
         ## Editor
         src/engine/editor/editor_camera.hpp
         src/engine/editor/editor_viewport.hpp

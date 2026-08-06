@@ -13,7 +13,9 @@
 
 #include "engine/serialization/document/document.hpp"
 #include "engine/serialization/tokenizer/token.hpp"
+#include <cstddef>
 #include <vector>
+#include <stdexcept>
 
 class Parser {
 
@@ -62,11 +64,127 @@ public:
     // Parsing methods
     //
 
-    void parse_document();
-    void parse_block();
-    
-    void parse_property();
+    /**
+     * @brief Method used to parse the whole document
+     * @details The document is a collection of blocks and properties
+     * @example "ENTITY{[Property1], [Property2], [Block1], [Block2]}"
+     * 
+     */
+    void parse_document(){
 
+        while(peek().token_type != TokenType::EndOfFile){
+            parse_block();
+        }
+
+    }
+
+
+    /**
+     * @brief Method used to parse a block of the document delimited by brackets
+     * @details A block is a collection of properties and blocks
+     * @example " ENTITY{[Property1], [Property2], [Block1], [Block2]}"
+     */
+    void parse_block(){
+
+        const Token& block_name = advance();
+
+        // Check if there is a block identifier 
+        if(block_name.token_type != TokenType::Identifier){
+            throw std::runtime_error("Invalid block identifier");
+        }
+
+        // Check if the next token is an LeftBrace TokenType
+        if(!expect(TokenType::LeftBrace)){
+            throw std::runtime_error("Invalid left brace token for block");
+        }
+
+    
+        // Save the current block information
+        const std::uint32_t block_line = block_name.line;
+        const std::uint32_t block_index = static_cast<std::uint32_t>(document_.blocks_.size());
+        const std::uint32_t first_property = static_cast<std::uint32_t>(document_.properties_.size());
+        const std::uint32_t first_child = static_cast<std::uint32_t>(document_.blocks_.size() + 1);
+        
+        // Add the block into the document
+        document_.blocks_.emplace_back(Block{
+            block_name.token_value,
+            block_line,
+            0,
+            0,
+            first_property,
+            0
+        });
+
+        // Parse the content of the block
+
+        while(peek().token_type != TokenType::RightBrace){
+            // If the next token is an identifier and the next token is an LeftBrace then parse a block
+            if( peek().token_type == TokenType::Identifier && peek(1).token_type == TokenType::LeftBrace){
+                parse_block();
+            }
+            // else if the next token is an identifier parse a property
+            else if (peek().token_type == TokenType::Identifier){
+                parse_property();
+            }
+            // else throw an error
+            else{
+                throw std::runtime_error("Invalid token for block content");
+            }
+        }
+
+        // Reed RightBrace
+        if(!expect(TokenType::RightBrace)){
+            throw std::runtime_error("Invalid right brace token for block");
+        }
+
+        // Update the block information 
+        Block& block = document_.blocks_[block_index];
+        block.first_child = first_child;
+        block.child_count = static_cast<std::uint32_t>(document_.blocks_.size()) - first_child;
+        block.property_count = static_cast<std::uint32_t>(document_.properties_.size()) - first_property;
+        block.line = block_line;
+    }
+    
+    /**
+     * @brief Method used to parse a line of the document that is a property
+     * @details A property is a key-value pair separated by an EQUALS TokenType
+     * @example "'Id' : 123"
+     * @throw std::runtime_error : If the key is not a valid identifier
+     * @throw std::runtime_error : If the equals token is not found
+     */
+    void parse_property(){
+
+        // Get the current token
+        const Token& key = advance();
+
+        // Check if the key is a valid identifier
+        if(key.token_type != TokenType::Identifier){
+            throw std::runtime_error("Invalid key for property");
+        }
+
+        // Check if the next token is a EQUALS token
+
+        if(!expect(TokenType::EQUALS)){
+            throw std::runtime_error("Invalid equals token for property");
+        }
+
+        // Identify the first value token
+        const std::uint32_t first_value = static_cast<std::uint32_t>(document_.values_.size());
+
+        while(is_value_token(peek())){
+            // Get the value token
+            const Token& value = advance();
+
+            // Add the value to the document
+            document_.values_.push_back(std::move(value));
+        }
+
+        // Count the number of values
+        const std::uint32_t value_count = static_cast<std::uint32_t>(document_.values_.size() - first_value);
+
+        // Add the property into the document
+        document_.properties_.emplace_back(Property{key.token_value, first_value, value_count});
+    }
 
     //
     // Helpers methods
